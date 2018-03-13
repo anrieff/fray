@@ -1,0 +1,52 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Local copy of the Code::Blocks project
+fray.cbp
+fray.layout
+fray.depend
+
+# Build directories
+bin/
+obj/
+
+# SDK directories:
+SDK/
+
+# Visual Studio:
+Debug/
+Release/
+*.suo
+*.sdf
+*.filters
+*.user
+*.sln
+*.vcxproj
+
+# Screenshots:
+fray_*.bmp
