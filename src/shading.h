@@ -22,3 +22,32 @@
  * @Brief Contains declarations of shader classes
  */
 #pragma once
+
+#include "color.h"
+#include "geometry.h"
+
+class Shader {
+public:
+	virtual ~Shader() {}
+	
+	virtual Color shade(Ray ray, const IntersectionInfo& info) = 0;
+};
+
+class ConstantShader: public Shader {
+public:
+	Color color = Color(1, 0, 0);
+	
+	Color shade(Ray ray, const IntersectionInfo& info) override;
+};
+
+class CheckerShader: public Shader {
+public:
+	Color color1 = Color(0.7, 0.7, 0.7);
+	Color color2 = Color(0.2, 0.2, 0.2);
+	double scaling = 0.05;
+	
+	CheckerShader() {}
+	CheckerShader(const Color& color1, const Color& color2): color1(color1), color2(color2) {}
+	
+	Color shade(Ray ray, const IntersectionInfo& info) override;
+};

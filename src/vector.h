@@ -128,3 +128,20 @@ inline Vector operator / (const Vector& a, double divider)
 	double multiplier = 1.0 / divider;
 	return Vector(a.x * multiplier, a.y * multiplier, a.z * multiplier);
 }
+
+inline double distance(const Vector& a, const Vector& b)
+{
+	Vector dist = a - b;
+	return dist.length();
+}
+
+
+
+/// @class Ray
+struct Ray {
+	Vector start;
+	Vector dir; // unit vector!
+	
+	Ray() {}
+	Ray(const Vector& start, const Vector& dir): start(start), dir(dir) {}
+};

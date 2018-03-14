@@ -22,3 +22,21 @@
  * @Brief Contains declaration of the raytracing camera.
  */
 #pragma once
+
+#include "vector.h"
+
+class Camera {
+	Vector topLeft, topRight, bottomLeft;
+	double w, h;
+public:
+	
+	Vector pos = Vector(0, 0, 0);
+	double yaw = 0, pitch = 0, roll = 0;
+	double fov = 90.0;
+	double aspectRatio = 1.3333;
+	
+	void beginFrame();
+	
+	Ray getScreenRay(double x, double y);
+	
+};

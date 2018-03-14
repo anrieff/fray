@@ -22,3 +22,42 @@
  * @Brief Contains declarations of geometry primitives.
  */
 #pragma once
+
+#include "vector.h"
+
+struct IntersectionInfo {
+	double dist;
+	Vector ip;
+	Vector norm;
+	double u, v;
+};
+
+class Geometry {
+public:
+	virtual ~Geometry() {}
+	
+	/// returns true if the ray intersects the geometry
+	virtual bool intersect(Ray ray, IntersectionInfo& info) = 0;
+};
+
+class Plane: public Geometry {
+public:
+	double height = 0.0;
+	
+	bool intersect(Ray ray, IntersectionInfo& info) override;
+};
+
+class Sphere: public Geometry {
+public:
+	Vector O = Vector(0, 0, 0);
+	double R = 1;
+	
+	Sphere() {}
+	Sphere(const Vector& position, double radius)
+	{
+		O = position;
+		R = radius;
+	}
+	
+	bool intersect(Ray ray, IntersectionInfo& info) override;
+};
