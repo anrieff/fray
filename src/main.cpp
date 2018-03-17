@@ -21,7 +21,6 @@
  * @File main.cpp
  * @Brief Raytracer main file
  */
-#include <SDL/SDL.h>
 #include <math.h>
 #include <vector>
 #include "util.h"

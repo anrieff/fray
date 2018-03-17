@@ -48,5 +48,8 @@ Release/
 *.sln
 *.vcxproj
 
+# Visual Studio Code:
+.vs/
+
 # Screenshots:
 fray_*.bmp
