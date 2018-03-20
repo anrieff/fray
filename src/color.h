@@ -34,7 +34,13 @@ inline unsigned convertTo8bit(float x)
 
 /// Represents a color, using floatingpoint components in [0..1]
 struct Color {
-	float r, g, b;
+	// a union, that allows us to refer to the channels by name (::r, ::g, ::b),
+	// or by index (::components[0] ...). See operator [].
+	union {
+		   struct { float r, g, b; };
+		   float components[3];
+	};
+
 	//
 	Color() {}
 	Color(float _r, float _g, float _b) //!< Construct a color from floatingpoint values
@@ -98,6 +104,16 @@ struct Color {
 		r /= divider;
 		g /= divider;
 		b /= divider;
+	}	
+	/// fetch r, g or b (depending on index)
+	inline const float& operator[] (int index) const
+	{
+		return components[index];
+	}
+	/// fetch r, g or b (depending on index)
+	inline float& operator[] (int index)
+	{
+		return components[index];
 	}
 };
 
