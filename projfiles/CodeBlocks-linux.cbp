@@ -36,6 +36,8 @@
 		<Linker>
 			<Add option="`sdl-config --libs`" />
 		</Linker>
+		<Unit filename="src/bitmap.cpp" />
+		<Unit filename="src/bitmap.h" />
 		<Unit filename="src/camera.cpp" />
 		<Unit filename="src/camera.h" />
 		<Unit filename="src/color.h" />
