@@ -32,6 +32,12 @@ set (SOURCES
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 target_link_libraries(${PROJECT_NAME} ${SDL_LIB})
 
+if (WIN32)
+	target_compile_definitions(${PROJECT_NAME}
+		PRIVATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_DEPRECATE
+	)
+endif()
+
 # add custom command for copying the SDL dll to the binary dir
 add_custom_command(TARGET ${PROJECT_NAME}
 	POST_BUILD
