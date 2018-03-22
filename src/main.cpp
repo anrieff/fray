@@ -23,6 +23,11 @@
  */
 #include <math.h>
 #include <vector>
+#ifndef _WIN32
+#include <SDL/SDL.h>
+#else
+#include <SDL.h>
+#endif // _WIN32
 #include "util.h"
 #include "sdl.h"
 #include "color.h"
