@@ -25,13 +25,44 @@
 
 #include "color.h"
 #include "geometry.h"
+#include "bitmap.h"
+
+class Texture {
+public:
+	virtual ~Texture() {}
+	
+	virtual Color sample(const IntersectionInfo& info) = 0;
+};
+
+class CheckerTexture: public Texture {
+public:
+	Color color1 = Color(0.7, 0.7, 0.7);
+	Color color2 = Color(0.2, 0.2, 0.2);
+	double scaling = 0.05;
+	
+	CheckerTexture() {}	
+	CheckerTexture(const Color& color1, const Color& color2): color1(color1), color2(color2) {}
+	Color sample(const IntersectionInfo& info) override;
+};
+
+class BitmapTexture: public Texture {
+	Bitmap bmp;
+public:
+	double scaling = 2;	
+	
+	BitmapTexture(const char* filename);
+	Color sample(const IntersectionInfo& info) override;
+};
 
 class Shader {
 public:
+	Texture* diffuseTex;
+	
 	virtual ~Shader() {}
 	
 	virtual Color shade(Ray ray, const IntersectionInfo& info) = 0;
 };
+
 
 class ConstantShader: public Shader {
 public:
@@ -40,14 +71,27 @@ public:
 	Color shade(Ray ray, const IntersectionInfo& info) override;
 };
 
-class CheckerShader: public Shader {
+class Lambert: public Shader {
 public:
-	Color color1 = Color(0.7, 0.7, 0.7);
-	Color color2 = Color(0.2, 0.2, 0.2);
-	double scaling = 0.05;
 	
-	CheckerShader() {}
-	CheckerShader(const Color& color1, const Color& color2): color1(color1), color2(color2) {}
+	Lambert(Texture* texture)
+	{
+		diffuseTex = texture;
+	}
+	
+	Color shade(Ray ray, const IntersectionInfo& info) override;
+};
+
+class Phong: public Shader {
+public:
+	float exponent = 10.0f;
+	float specularMultiplier = 0.25f;
+	Color specularColor = Color(0.75f, 0.75f, 0.75f);
+	
+	Phong(Texture* texture)
+	{
+		diffuseTex = texture;
+	}
 	
 	Color shade(Ray ray, const IntersectionInfo& info) override;
 };

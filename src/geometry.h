@@ -24,12 +24,15 @@
 #pragma once
 
 #include "vector.h"
+#include <functional>
 
+class Geometry;
 struct IntersectionInfo {
 	double dist;
 	Vector ip;
 	Vector norm;
 	double u, v;
+	Geometry* geom;
 };
 
 class Geometry {
@@ -61,3 +64,59 @@ public:
 	
 	bool intersect(Ray ray, IntersectionInfo& info) override;
 };
+
+class Cube: public Geometry {
+	void intersectCubeSide(Ray ray, double start, double dir, double target,
+							const Vector& normal, IntersectionInfo& info,
+							std::function<void(const Vector&)> uv_mapping);
+
+public:
+	Vector O = Vector(0, 0, 0);
+	double halfSide = 1;
+	
+	Cube() {}
+	Cube(const Vector& position, double halfSide)
+	{
+		O = position;
+		this->halfSide = halfSide;
+	}
+	
+	bool intersect(Ray ray, IntersectionInfo& info) override;
+	
+};
+
+class CsgOp: public Geometry {
+public:
+	Geometry* left;
+	Geometry* right;
+	
+	virtual bool boolOp(bool inLeft, bool inRight) = 0;
+	
+	bool intersect(Ray ray, IntersectionInfo& info) override;
+};
+
+class CsgPlus: public CsgOp {
+public:
+	bool boolOp(bool inLeft, bool inRight) override
+	{
+		return inLeft || inRight;
+	}
+};
+
+class CsgIntersect: public CsgOp {
+public:
+	bool boolOp(bool inLeft, bool inRight) override
+	{
+		return inLeft && inRight;
+	}
+};
+
+class CsgMinus: public CsgOp {
+public:
+	bool boolOp(bool inLeft, bool inRight) override
+	{
+		return inLeft && !inRight;
+	}
+};
+
+

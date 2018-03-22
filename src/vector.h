@@ -135,7 +135,20 @@ inline double distance(const Vector& a, const Vector& b)
 	return dist.length();
 }
 
+// orient the normal, so that we're "outside"
+inline Vector faceforward(const Vector& rayDir, const Vector& normal)
+{
+	if (dot(rayDir, normal) < 0)
+		return normal;
+	else
+		return -normal;
+}
 
+// reflect an incoming direction i along normal n (both unit vectors)
+inline Vector reflect(const Vector& i, const Vector &n)
+{
+	return i + 2 * dot(-i, n) * n;
+}
 
 /// @class Ray
 struct Ray {

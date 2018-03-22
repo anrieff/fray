@@ -41,18 +41,41 @@ struct Node {
 
 Camera camera;
 vector<Node> nodes;
+Vector lightPos (100, 200, -80);
+Color lightColor(1, 1, 0.9);
+double lightIntensity = 50000;
+Color ambientLightColor = Color(1, 1, 1) * 0.5;
 
 void setupScene()
 {
 	Node plane;
+	CheckerTexture* checkerBW = new CheckerTexture();
+	BitmapTexture* floorTiles = new BitmapTexture("data/floor.bmp");
+	BitmapTexture* world = new BitmapTexture("data/world.bmp");
+	world->scaling = 400;
+	CheckerTexture* checkerColor = new CheckerTexture(Color(1, 0.5, 0.5), Color(0.5, 1.0, 1.0));
+	CheckerTexture* checkerCube = new CheckerTexture(Color(0, 0, 1), Color(0.1, 0.1, 0.1));
+	checkerCube->scaling = 0.2;
+
 	plane.geometry = new Plane;
-	plane.shader = new CheckerShader;
+	plane.shader = new Lambert(floorTiles);
 	nodes.push_back(plane);
 	
 	Node sphere;
 	sphere.geometry = new Sphere(Vector(-10, 60, 0), 30);
-	sphere.shader = new CheckerShader(Color(1, 0.5, 0.5), Color(0.5, 1.0, 1.0));
+	Phong* phong = new Phong(checkerColor);
+	phong->exponent = 20;
+	phong->specularMultiplier = 0.7;
+	sphere.shader = new Lambert(world);
 	nodes.push_back(sphere);
+	
+	Node cube;
+	CsgOp* csg = new CsgMinus;
+	csg->left = new Cube(Vector(+40, 16, 0), 15);
+	csg->right = new Sphere(Vector(+55, 31, -15), 8);
+	cube.geometry = csg;
+	cube.shader = new Lambert(checkerColor);
+	nodes.push_back(cube);
 	
 	camera.pos = Vector(0, 60, -120);
 	camera.yaw = toRadians(-10);
@@ -101,26 +124,41 @@ Color raytrace(double x, double y)
 
 void render()
 {
+	unsigned startTicks = SDL_GetTicks();
 	camera.beginFrame();
+	
+	const double offsets[5][2] = {
+		{ 0, 0 }, 
+		{ 0.6, 0 },
+		{ 0.3, 0.3 },
+		{ 0, 0.6 },
+		{ 0.6, 0.6 },
+	};
+	
 	for (int y = 0; y < frameHeight(); y++) {
 		for (int x = 0; x < frameWidth(); x++) {
-			vfb[y][x] = raytrace(x, y);
+			Color sum(0, 0, 0);
+			for (int i = 0; i < 5; i++)
+				sum += raytrace(x + offsets[i][0], y + offsets[i][1]);
+			vfb[y][x] = sum / 5.0f;
 		}
 	}
+	unsigned elapsed = SDL_GetTicks() - startTicks;
+	
+	printf("Frame took %d ms\n", elapsed);
 }
 
 int main(int argc, char** argv)
 {
 	initGraphics(RESX, RESY);
 	setupScene();
-	//for (double angle = 0; angle < 360; angle += 15) {
+	for (double angle = 0; angle < 1; angle += 15) {
 		//camera.fov = fov;
-//		extern Vector lightPos;
-//		double angleRad = toRadians(angle);
-//		lightPos = Vector(cos(angleRad) * 200, 200, sin(angleRad) * 200);
+		double angleRad = toRadians(angle);
+		lightPos = Vector(cos(angleRad) * 200, 200, sin(angleRad) * 200);
 		render();
 		displayVFB(vfb);
-	//}
+	}
 	waitForUserExit();
 	closeGraphics();
 	printf("Exited cleanly\n");

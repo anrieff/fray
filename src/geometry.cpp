@@ -40,6 +40,7 @@ bool Plane::intersect(Ray ray, IntersectionInfo& info)
 	info.norm = Vector(0, 1, 0);
 	info.u = info.ip.x;
 	info.v = info.ip.z;
+	info.geom = this;
 	//
 	return true;
 }
@@ -71,7 +72,118 @@ bool Sphere::intersect(Ray ray, IntersectionInfo& info)
 	info.dist = distance(ray.start, info.ip);
 	info.norm = info.ip - this->O;
 	info.norm.normalize();
-	info.u = toDegrees(atan2(info.norm.z, info.norm.x));
-	info.v = toDegrees(asin(info.norm.y));
+	info.u = (toDegrees(atan2(info.norm.z, info.norm.x))) / 360.0;
+	info.v = 1 - (toDegrees(asin(info.norm.y)) + 90) / 180.0;
+	info.geom = this;
 	return true;
+}
+
+void Cube::intersectCubeSide(Ray ray, double start, double dir, double target, const Vector& normal,
+							IntersectionInfo& info, std::function<void (const Vector&)> uv_mapping)
+{
+	if (fabs(dir) < 1e-9) return;
+
+	// start + mult*dir = target
+	double mult = (target - start) / dir;
+	
+	if (mult < 0) return;
+	
+	Vector ip = ray.start + ray.dir * mult;
+	
+	if (ip.x < O.x - halfSide - 1e-6 || ip.x > O.x + halfSide + 1e-6) return;
+	if (ip.y < O.y - halfSide - 1e-6 || ip.y > O.y + halfSide + 1e-6) return;
+	if (ip.z < O.z - halfSide - 1e-6 || ip.z > O.z + halfSide + 1e-6) return;
+		
+	double dist = distance(ray.start, ip);
+	if (dist < info.dist) {
+		info.dist = dist;
+		info.ip = ip;
+		
+		info.norm = normal;
+		uv_mapping(ip);
+	}
+}
+
+bool Cube::intersect(Ray ray, IntersectionInfo& info)
+{
+	info.dist = 1e99;
+	
+	auto sideX_UV = [&info] (const Vector& ip) { info.u = ip.y; info.v = ip.z; };
+	auto sideY_UV = [&info] (const Vector& ip) { info.u = ip.x; info.v = ip.z; };
+	auto sideZ_UV = [&info] (const Vector& ip) { info.u = ip.x; info.v = ip.y; };
+
+	// X:	
+	intersectCubeSide(ray, ray.start.x, ray.dir.x, O.x - halfSide, Vector(-1, 0, 0), info, sideX_UV);
+	intersectCubeSide(ray, ray.start.x, ray.dir.x, O.x + halfSide, Vector(+1, 0, 0), info, sideX_UV);
+
+	// Y:
+	intersectCubeSide(ray, ray.start.y, ray.dir.y, O.y - halfSide, Vector(0, -1, 0), info, sideY_UV);
+	intersectCubeSide(ray, ray.start.y, ray.dir.y, O.y + halfSide, Vector(0, +1, 0), info, sideY_UV);
+	
+	// Z:
+	intersectCubeSide(ray, ray.start.z, ray.dir.z, O.z - halfSide, Vector(0, 0, -1), info, sideZ_UV);
+	intersectCubeSide(ray, ray.start.z, ray.dir.z, O.z + halfSide, Vector(0, 0, +1), info, sideZ_UV);
+
+	if (info.dist < 1e99) {
+		info.geom = this;
+		return true;
+	} else {
+		return false;
+	}
+}
+
+vector<IntersectionInfo> findAllIntersections(Ray ray, Geometry* g)
+{
+	vector<IntersectionInfo> result;
+	
+	int counter = 30;
+	Vector origin = ray.start;
+	
+	IntersectionInfo info;
+	while (g->intersect(ray, info) && counter --> 0) {
+		result.push_back(info);
+	
+		ray.start = info.ip + ray.dir * 1e-6;
+	}
+	
+	for (int i = 1; i < int(result.size()); i++)
+		result[i].dist = distance(result[i].ip, origin);
+	
+	return result;
+}
+
+bool CsgOp::intersect(Ray ray, IntersectionInfo& info)
+{
+	vector<IntersectionInfo>
+		leftIntersections = findAllIntersections(ray, left),
+		rightIntersections = findAllIntersections(ray, right);
+	
+	vector<IntersectionInfo> allIntersections;
+	
+	for (auto& ip: leftIntersections) allIntersections.push_back(ip);
+	for (auto& ip: rightIntersections) allIntersections.push_back(ip);
+	
+	sort(allIntersections.begin(), allIntersections.end(), []
+		(const IntersectionInfo& a, const IntersectionInfo& b) -> bool {
+			return a.dist < b.dist;
+	});
+	
+	bool inLeft = (leftIntersections.size() % 2) == 1;
+	bool inRight = (rightIntersections.size() % 2) == 1;
+	
+	bool boolResult = boolOp(inLeft, inRight);
+	
+	for (auto& ip: allIntersections) {
+		if (ip.geom == left) inLeft = !inLeft;
+		else                 inRight = !inRight;
+		bool newBoolResult = boolOp(inLeft, inRight);
+		
+		if (newBoolResult != boolResult) {
+			info = ip;
+			info.geom = this;
+			return true;
+		}
+	}
+	
+	return false;
 }

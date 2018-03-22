@@ -27,36 +27,93 @@
 #include <algorithm>
 using namespace std;
 
-Vector lightPos (100, 200, 80);
-Color lightColor(1, 1, 0.9);
-double lightIntensity = 50000;
-Color ambientLightColor = Color(1, 1, 1) * 0.1;
+extern Vector lightPos;
+extern Color lightColor;
+extern double lightIntensity;
+extern Color ambientLightColor;
+
 
 Color ConstantShader::shade(Ray ray, const IntersectionInfo& info)
 {
 	return color;
 }
 
-Color CheckerShader::shade(Ray ray, const IntersectionInfo& info)
+Color CheckerTexture::sample(const IntersectionInfo& info)
 {
 	int integerX = int(floor(info.u * scaling)); // 5.5 -> 5
 	int integerY = int(floor(info.v * scaling)); // -3.2 -> -4
 	
-	Color diffuseColor = ((integerX + integerY) % 2 == 0) ? color1 : color2;
+	return ((integerX + integerY) % 2 == 0) ? color1 : color2;
+}
+
+Color Lambert::shade(Ray ray, const IntersectionInfo& info)
+{
+	Color diffuseColor = diffuseTex->sample(info);
 	
 	double lightDistSqr = (info.ip - lightPos).lengthSqr();
 	Vector toLight = (lightPos - info.ip);
 	toLight.normalize();
 	
-	double cosAngle = dot(toLight, info.norm);
+	Vector n = faceforward(ray.dir, info.norm);
+	
+	double cosAngle = dot(toLight, n);
 	double lightMultiplier = lightIntensity * cosAngle / lightDistSqr;
 	
 	lightMultiplier = max(0.0, lightMultiplier);
 	
 	Color result = diffuseColor * ambientLightColor;
 	
-	if (visible(info.ip + info.norm * 1e-6, lightPos))
+	if (visible(info.ip + n * 1e-6, lightPos))
 		result += diffuseColor * lightColor * lightMultiplier;
 	
 	return result;
+}
+
+Color Phong::shade(Ray ray, const IntersectionInfo& info)
+{
+	Color diffuseColor = diffuseTex->sample(info);
+	
+	double lightDistSqr = (info.ip - lightPos).lengthSqr();
+	Vector toLight = (lightPos - info.ip);
+	toLight.normalize();
+	
+	Vector n = faceforward(ray.dir, info.norm);
+	
+	double cosAngle = max(0.0, dot(toLight, n));
+	double lightMultiplier = lightIntensity * cosAngle / lightDistSqr;
+	
+	Color result = diffuseColor * ambientLightColor;
+	
+	if (visible(info.ip + n * 1e-6, lightPos)) {
+		result += diffuseColor * lightColor * lightMultiplier;
+		
+		Vector fromLight = -toLight;
+		Vector r = reflect(fromLight, n);
+		double cosCameraReflection = dot(-ray.dir, r);
+		if (cosCameraReflection > 0)
+			result += lightColor * specularColor
+			          * pow(cosCameraReflection, exponent)
+			          * specularMultiplier;
+	}
+	
+	return result;
+}
+
+
+BitmapTexture::BitmapTexture(const char* filename)
+{
+	bmp.loadBMP(filename);
+}
+
+Color BitmapTexture::sample(const IntersectionInfo& info)
+{
+	int int_x = int(floor(info.u * scaling));
+	int int_y = int(floor(info.v * scaling));
+	
+	int_x %= bmp.getWidth();
+	int_y %= bmp.getHeight();
+	if (int_x < 0) int_x += bmp.getWidth();
+	if (int_y < 0) int_y += bmp.getHeight();
+	
+	return bmp.getPixel(int_x, int_y);
 }
