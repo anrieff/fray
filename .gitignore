@@ -51,5 +51,8 @@ Release/
 # Visual Studio Code:
 .vs/
 
+# CMake project directory
+develop/
+
 # Screenshots:
 fray_*.bmp

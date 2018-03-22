@@ -16,14 +16,14 @@ echo ">> Downloading SDL 1.2 into $SDK_DIR"
 curl https://www.libsdl.org/release/SDL-devel-1.2.15-VC.zip --output $SDK_DIR/sdl.zip
 
 if [ $? -ne 0 ]; then
-	echo ">> ERROR: cURL failed to download SDL sdk"
+	echo ">> ERROR: cURL failed to download SDL archive"
 else
 
 	echo ">> Extracting SDL sdk in $SDK_DIR/SDL"
 	# unzip doesn't handle relative paths well
-	unzip -u $SDK_DIR/sdl.zip -d $SDK_DIR
+	unzip -q -u $SDK_DIR/sdl.zip -d $SDK_DIR
 
-	mv $SDK_DIR/SDL-1.2.15 $SDK_DIR/SDL
+	mv -T $SDK_DIR/SDL-1.2.15 $SDK_DIR/SDL
 
 	rm $SDK_DIR/sdl.zip
 fi
