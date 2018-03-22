@@ -21,7 +21,11 @@
  * @File sdl.cpp
  * @Brief Implements the interface to SDL (mainly drawing to screen functions)
  */
+#ifndef _WIN32
 #include <SDL/SDL.h>
+#else
+#include <SDL.h>
+#endif // _WIN32
 #include <stdio.h>
 #include "sdl.h"
 
