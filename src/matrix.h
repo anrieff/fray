@@ -28,6 +28,18 @@
 struct Matrix {
 	double m[3][3];
 	Matrix() {}
+	void makeZero()
+	{
+		for (int i = 0; i < 3; i++)
+			for (int j = 0; j < 3; j++)
+				m[i][j] = 0.0;
+	}
+	void loadIdentity()
+	{
+		for (int i = 0; i < 3; i++)
+			for (int j = 0; j < 3; j++)
+				m[i][j] = (i == j) ? 1.0 : 0.0;
+	}
 	Matrix(double diagonalElement)
 	{
 		for (int i = 0; i < 3; i++)
@@ -55,3 +67,30 @@ double determinant(const Matrix& a); //!< finds the determinant of a matrix
 Matrix rotationAroundX(double angle); //!< returns a rotation matrix around the X axis; the angle is in radians
 Matrix rotationAroundY(double angle); //!< same as above, but rotate around Y
 Matrix rotationAroundZ(double angle); //!< same as above, but rotate around Z
+
+struct Transform {
+	Vector offset;
+	Matrix m;
+	Matrix invM;
+	
+	Transform()
+	{
+		loadIdentity();
+	}
+	
+	// setup the transform:
+	void loadIdentity();
+	
+	void scale(double x, double y, double z);
+	void rotate(double yaw, double pitch, double roll);
+	void translate(const Vector& t);
+	
+	// use the transform:
+	Vector transformPoint(const Vector& t);
+	Vector untransformPoint(const Vector& t);
+	
+	Vector transformDir(const Vector& dir);
+	Vector untransformDir(const Vector& dir);
+	
+	
+};

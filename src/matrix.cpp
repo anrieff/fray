@@ -105,3 +105,53 @@ Matrix inverseMatrix(const Matrix& m)
 	return result;
 }
 
+void Transform::loadIdentity()
+{
+	offset.makeZero();
+	m.loadIdentity();
+	invM.loadIdentity();
+}
+
+void Transform::scale(double x, double y, double z)
+{
+	Matrix tmp;
+	tmp.makeZero();
+	tmp.m[0][0] = x;
+	tmp.m[1][1] = y;
+	tmp.m[2][2] = z;
+	
+	this->m = this->m * tmp;
+	this->invM = inverseMatrix(m);
+}
+
+void Transform::rotate(double yaw, double pitch, double roll)
+{
+	this->m = this->m * rotationAroundZ(roll) * rotationAroundX(pitch) * rotationAroundY(yaw);
+	this->invM = inverseMatrix(m);	
+}
+
+void Transform::translate(const Vector& t)
+{
+	offset += t;
+}
+
+// use the transform:
+Vector Transform::transformPoint(const Vector& t)
+{
+	return t * m + offset;
+}
+
+Vector Transform::untransformPoint(const Vector& t)
+{
+	return (t - offset) * invM;
+}
+
+Vector Transform::transformDir(const Vector& dir)
+{
+	return normalize(dir * m);
+}
+
+Vector Transform::untransformDir(const Vector& dir)
+{
+	return normalize(dir * invM);
+}

@@ -102,7 +102,7 @@ Color Phong::shade(Ray ray, const IntersectionInfo& info)
 
 BitmapTexture::BitmapTexture(const char* filename)
 {
-	bmp.loadBMP(filename);
+	bmp.loadImage(filename);
 }
 
 Color BitmapTexture::sample(const IntersectionInfo& info)

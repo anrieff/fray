@@ -35,12 +35,15 @@ struct IntersectionInfo {
 	Geometry* geom;
 };
 
-class Geometry {
+class Intersectable {
 public:
-	virtual ~Geometry() {}
+	virtual ~Intersectable() {}
 	
 	/// returns true if the ray intersects the geometry
 	virtual bool intersect(Ray ray, IntersectionInfo& info) = 0;
+};
+
+class Geometry: public Intersectable {
 };
 
 class Plane: public Geometry {

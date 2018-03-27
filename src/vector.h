@@ -98,6 +98,12 @@ struct Vector {
 	inline const double& operator[](const int index) const { return v[index]; }
 };
 
+inline Vector normalize(Vector t)
+{
+	t.normalize();
+	return t;
+}
+
 inline Vector operator + (const Vector& a, const Vector& b)
 {
 	return Vector(a.x + b.x, a.y + b.y, a.z + b.z);
