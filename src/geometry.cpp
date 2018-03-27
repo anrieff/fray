@@ -72,7 +72,7 @@ bool Sphere::intersect(Ray ray, IntersectionInfo& info)
 	info.dist = distance(ray.start, info.ip);
 	info.norm = info.ip - this->O;
 	info.norm.normalize();
-	info.u = (toDegrees(atan2(info.norm.z, info.norm.x))) / 360.0;
+	info.u = (toDegrees(atan2(info.norm.z, info.norm.x)) + 180.0) / 360.0;
 	info.v = 1 - (toDegrees(asin(info.norm.y)) + 90) / 180.0;
 	info.geom = this;
 	return true;

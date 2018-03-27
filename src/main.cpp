@@ -50,15 +50,15 @@ Vector lightPos (100, 200, -80);
 Color lightColor(1, 1, 0.9);
 double lightIntensity = 50000;
 Color ambientLightColor = Color(1, 1, 1) * 0.5;
-bool antialiasing = true;
+bool antialiasing = false;
 
 void setupScene()
 {
 	Node plane;
 	CheckerTexture* checkerBW = new CheckerTexture();
 	BitmapTexture* floorTiles = new BitmapTexture("data/floor.bmp");
+	floorTiles->scaling = 1/100.0;
 	BitmapTexture* world = new BitmapTexture("data/world.bmp");
-	world->scaling = 400;
 	CheckerTexture* checkerColor = new CheckerTexture(Color(1, 0.5, 0.5), Color(0.5, 1.0, 1.0));
 	CheckerTexture* checkerCube = new CheckerTexture(Color(0, 0, 1), Color(0.1, 0.1, 0.1));
 	checkerCube->scaling = 0.2;

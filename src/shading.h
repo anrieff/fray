@@ -48,7 +48,7 @@ public:
 class BitmapTexture: public Texture {
 	Bitmap bmp;
 public:
-	double scaling = 2;	
+	double scaling = 1;	
 	
 	BitmapTexture(const char* filename);
 	Color sample(const IntersectionInfo& info) override;

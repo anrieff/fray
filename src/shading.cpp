@@ -107,8 +107,8 @@ BitmapTexture::BitmapTexture(const char* filename)
 
 Color BitmapTexture::sample(const IntersectionInfo& info)
 {
-	int int_x = int(floor(info.u * scaling));
-	int int_y = int(floor(info.v * scaling));
+	int int_x = int(floor(info.u * scaling * bmp.getWidth()));
+	int int_y = int(floor(info.v * scaling * bmp.getHeight()));
 	
 	int_x %= bmp.getWidth();
 	int_y %= bmp.getHeight();
