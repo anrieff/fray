@@ -26,7 +26,10 @@
 #include <math.h>
 
 struct Vector {
-	double x, y, z;
+	union {
+		struct { double x, y, z; };
+		double v[3];
+	};
 	
 	Vector () {}
 	Vector(double _x, double _y, double _z) { set(_x, _y, _z); }
@@ -78,6 +81,21 @@ struct Vector {
 	{
 		scale(newLength / length());
 	}
+	int maxDimension() const
+	{
+		double maxVal = fabs(x);
+		int maxDim = 0;
+		if (fabs(y) > maxVal) {
+			maxDim = 1;
+			maxVal = fabs(y);
+		}
+		if (fabs(z) > maxVal) {
+			maxDim = 2;
+		}
+		return maxDim;
+	}
+	inline double& operator[](const int index) { return v[index]; }
+	inline const double& operator[](const int index) const { return v[index]; }
 };
 
 inline Vector operator + (const Vector& a, const Vector& b)
