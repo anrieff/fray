@@ -32,9 +32,13 @@
 			<Add option="-Wall" />
 			<Add option="-std=c++14" />
 			<Add option="`sdl-config --cflags`" />
+			<Add directory="/usr/include/OpenEXR" />
 		</Compiler>
 		<Linker>
 			<Add option="`sdl-config --libs`" />
+			<Add library="IlmImf" />
+			<Add library="Iex" />
+			<Add library="Half" />
 		</Linker>
 		<Unit filename="src/bitmap.cpp" />
 		<Unit filename="src/bitmap.h" />
@@ -52,6 +56,7 @@
 		<Unit filename="src/sdl.h" />
 		<Unit filename="src/shading.cpp" />
 		<Unit filename="src/shading.h" />
+		<Unit filename="src/util.cpp" />
 		<Unit filename="src/util.h" />
 		<Unit filename="src/vector.h" />
 		<Extensions>
