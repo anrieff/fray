@@ -18,38 +18,35 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 /**
- * @File util.h
+ * @File util.cpp
  * @Brief a few useful short functions
  */
-#pragma once
 
-#include <stdlib.h>
-#include <math.h>
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
 #include <string>
-#include "constants.h"
+using namespace std;
 
-// get the count (number of elements of some array). E.g. "int a[8]; int b[11][2]; COUNT_OF(a) = 8; COUNT_OF(b) = 11"
-#define COUNT_OF(someArray) (int(sizeof(someArray) / sizeof(someArray[0])))
+string upCaseString(string s)
+{
+	for (int i = 0; i < (int) s.length(); i++)
+		s[i] = toupper(s[i]);
+	return s;
+}
 
-inline double signOf(double x) { return x > 0 ? +1 : -1; }
-inline double sqr(double a) { return a * a; }
-inline double toRadians(double angle) { return angle / 180.0 * PI; }
-inline double toDegrees(double angle_rad) { return angle_rad / PI * 180.0; }
-inline int nearestInt(float x) { return (int) floor(x + 0.5f); }
-
-/// returns a random floating-point number in [0..1).
-/// This is not a very good implementation. A better method is to be employed soon.
-inline float randomFloat() { return rand() / (float) RAND_MAX; }
-
-std::string upCaseString(std::string s); //!< returns the string in UPPERCASE
-std::string extensionUpper(const char* fileName); //!< Given a filename, return its extension in UPPERCASE
-
-/// a simple RAII class for FILE* pointers.
-class FileRAII {
-        FILE* held;
-public:
-        FileRAII(FILE* init): held(init) {}
-        ~FileRAII() { if (held) fclose(held); held = NULL; }
-        FileRAII(const FileRAII&) = delete;
-        FileRAII& operator = (const FileRAII&) = delete;
-};
+string extensionUpper(const char* fileName)
+{
+	int l = (int) strlen(fileName);
+	if (l < 2) return "";
+	
+	for (int i = l - 1; i >= 0; i--) {
+		if (fileName[i] == '.') {
+			string result = "";
+			for  (int j = i + 1; j < l; j++) result += toupper(fileName[j]);
+			return result;
+		}
+	}
+	return "";
+}

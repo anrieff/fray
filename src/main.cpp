@@ -50,6 +50,7 @@ Vector lightPos (100, 200, -80);
 Color lightColor(1, 1, 0.9);
 double lightIntensity = 50000;
 Color ambientLightColor = Color(1, 1, 1) * 0.5;
+bool antialiasing = true;
 
 void setupScene()
 {
@@ -139,13 +140,18 @@ void render()
 		{ 0, 0.6 },
 		{ 0.6, 0.6 },
 	};
+	int numAASamples = COUNT_OF(offsets);
 	
 	for (int y = 0; y < frameHeight(); y++) {
 		for (int x = 0; x < frameWidth(); x++) {
-			Color sum(0, 0, 0);
-			for (int i = 0; i < 5; i++)
-				sum += raytrace(x + offsets[i][0], y + offsets[i][1]);
-			vfb[y][x] = sum / 5.0f;
+			Color avg = raytrace(x + offsets[0][0], y + offsets[0][1]);
+			if (antialiasing) {
+				for (int i = 1; i < numAASamples; i++)
+					avg += raytrace(x + offsets[i][0], y + offsets[i][1]);
+				vfb[y][x] = avg / numAASamples;
+			} else {
+				vfb[y][x] = avg; // divided by just one, so leave as is
+			}
 		}
 	}
 	unsigned elapsed = SDL_GetTicks() - startTicks;
