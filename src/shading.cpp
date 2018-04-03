@@ -38,7 +38,7 @@ Color ConstantShader::shade(Ray ray, const IntersectionInfo& info)
 	return color;
 }
 
-Color CheckerTexture::sample(const IntersectionInfo& info)
+Color CheckerTexture::sample(Ray ray, const IntersectionInfo& info)
 {
 	int integerX = int(floor(info.u * scaling)); // 5.5 -> 5
 	int integerY = int(floor(info.v * scaling)); // -3.2 -> -4
@@ -48,7 +48,7 @@ Color CheckerTexture::sample(const IntersectionInfo& info)
 
 Color Lambert::shade(Ray ray, const IntersectionInfo& info)
 {
-	Color diffuseColor = diffuseTex->sample(info);
+	Color diffuseColor = diffuseTex->sample(ray, info);
 	
 	double lightDistSqr = (info.ip - lightPos).lengthSqr();
 	Vector toLight = (lightPos - info.ip);
@@ -71,7 +71,7 @@ Color Lambert::shade(Ray ray, const IntersectionInfo& info)
 
 Color Phong::shade(Ray ray, const IntersectionInfo& info)
 {
-	Color diffuseColor = diffuseTex->sample(info);
+	Color diffuseColor = diffuseTex->sample(ray, info);
 	
 	double lightDistSqr = (info.ip - lightPos).lengthSqr();
 	Vector toLight = (lightPos - info.ip);
@@ -105,7 +105,7 @@ BitmapTexture::BitmapTexture(const char* filename)
 	bmp.loadImage(filename);
 }
 
-Color BitmapTexture::sample(const IntersectionInfo& info)
+Color BitmapTexture::sample(Ray ray, const IntersectionInfo& info)
 {
 	int int_x = int(floor(info.u * scaling * bmp.getWidth()));
 	int int_y = int(floor(info.v * scaling * bmp.getHeight()));
@@ -180,7 +180,7 @@ Color Layered::shade(Ray ray, const IntersectionInfo& info)
 {
 	Color result(0, 0, 0);
 	for (int i = 0; i < numLayers; i++) {
-		Color opacity = (layers[i].texture ? layers[i].texture->sample(info) : layers[i].opacity);
+		Color opacity = (layers[i].texture ? layers[i].texture->sample(ray, info) : layers[i].opacity);
 		result = layers[i].shader->shade(ray, info) * opacity + 
 		         (Color(1, 1, 1) - opacity) * result;
 	}

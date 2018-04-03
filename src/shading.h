@@ -27,11 +27,12 @@
 #include "geometry.h"
 #include "bitmap.h"
 
+
 class Texture {
 public:
 	virtual ~Texture() {}
 	
-	virtual Color sample(const IntersectionInfo& info) = 0;
+	virtual Color sample(Ray ray, const IntersectionInfo& info) = 0;
 };
 
 class CheckerTexture: public Texture {
@@ -42,16 +43,16 @@ public:
 	
 	CheckerTexture() {}	
 	CheckerTexture(const Color& color1, const Color& color2): color1(color1), color2(color2) {}
-	Color sample(const IntersectionInfo& info) override;
+	Color sample(Ray ray, const IntersectionInfo& info) override;
 };
 
 class BitmapTexture: public Texture {
 	Bitmap bmp;
 public:
-	double scaling = 1;	
+	double scaling = 1;
 	
 	BitmapTexture(const char* filename);
-	Color sample(const IntersectionInfo& info) override;
+	Color sample(Ray ray, const IntersectionInfo& info) override;
 };
 
 class Shader {
@@ -62,6 +63,7 @@ public:
 	
 	virtual Color shade(Ray ray, const IntersectionInfo& info) = 0;
 };
+
 
 
 class ConstantShader: public Shader {
