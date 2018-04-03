@@ -187,3 +187,21 @@ Color Layered::shade(Ray ray, const IntersectionInfo& info)
 	
 	return result;
 }
+
+Color FresnelTexture::sample(Ray ray, const IntersectionInfo& info)
+{
+	Vector n;
+	double myIor;
+	
+	if (dot(ray.dir, info.norm) < 0) {
+		n = info.norm;
+		myIor = ior;
+	} else {
+		n = -info.norm;
+		myIor = 1.0 / ior;
+	}
+		
+	float f = fresnel(ray.dir, n, myIor);
+	
+	return Color(f, f, f);
+}

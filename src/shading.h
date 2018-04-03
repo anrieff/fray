@@ -117,6 +117,14 @@ public:
 	Color shade(Ray ray, const IntersectionInfo& info) override;
 };
 
+class FresnelTexture: public Texture {
+public:
+	double ior = 1;
+	
+	FresnelTexture(double ior): ior(ior) {}
+	Color sample(Ray ray, const IntersectionInfo& info) override;	
+};
+
 class Layered: public Shader {
 	struct Layer {
 		Shader* shader;
@@ -127,6 +135,8 @@ class Layered: public Shader {
 	Layer layers[32];
 public:
 	
+	// adds another layer to the top of the layer stack (the first added layer (#0) is the most bottom one;
+	// #1 is directly above it, and so forth:
 	void addLayer(Shader* shader, Color opacity = Color(1, 1, 1), Texture* texture = nullptr);
 	
 	Color shade(Ray ray, const IntersectionInfo& info) override;

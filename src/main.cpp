@@ -81,7 +81,7 @@ void setupScene()
 	//CheckerTexture* checkerBW = new CheckerTexture();
 	BitmapTexture* floorTiles = new BitmapTexture("data/floor.bmp");
 	floorTiles->scaling = 1/100.0;
-	BitmapTexture* world = new BitmapTexture("data/world.bmp");
+	//BitmapTexture* world = new BitmapTexture("data/world.bmp");
 	CheckerTexture* checkerColor = new CheckerTexture(Color(1, 0.5, 0.5), Color(0.5, 1.0, 1.0));
 	CheckerTexture* checkerCube = new CheckerTexture(Color(0, 0, 1), Color(0.1, 0.1, 0.1));
 	checkerCube->scaling = 0.2;
@@ -102,7 +102,15 @@ void setupScene()
 	phong->exponent = 20;
 	phong->specularMultiplier = 0.7;
 	sphere.T.translate(Vector(-10, 60, 0));
-	sphere.shader = new Refraction(1.33, Color(1, 1, 1) * 0.95);
+	
+	// create a glassy shader by using a:
+	// layer 0 (bottom): refraction shader, ior = 1.6, opacity = 1
+	// layer 1 (top): reflection shader, multiplier 0.95, opacity = fresnel texture with ior = 1.6
+	double GLASS_IOR = 1.6;
+	Layered* glassShader = new Layered;
+	glassShader->addLayer(new Refraction(GLASS_IOR));
+	glassShader->addLayer(new Reflection(0.95), Color(1, 1, 1), new FresnelTexture(GLASS_IOR));
+	sphere.shader = glassShader;;
 	sphereIndex = int(nodes.size());
 	nodes.push_back(sphere);
 	
@@ -193,6 +201,7 @@ void render()
 				vfb[y][x] = avg; // divided by just one, so leave as is
 			}
 		}
+		
 	}
 	unsigned elapsed = SDL_GetTicks() - startTicks;
 	
@@ -203,19 +212,9 @@ int main(int argc, char** argv)
 {
 	initGraphics(RESX, RESY);
 	setupScene();
-	Node& sphere = nodes[sphereIndex];
-	Node& cube = nodes[cubeIndex];
-	for (double offset = 0; offset < 1; offset += 10) {
-		cube.T.translate(Vector(-10, 0, 0));
-		//sphere.T.loadIdentity();
-		//sphere.T.rotate(toRadians(angle), toRadians(-55), 0);
-		//camera.yaw = toRadians(angle);
-		camera.beginFrame();
-		//double angleRad = toRadians(angle);
-		//lightPos = Vector(cos(angleRad) * 200, 200, sin(angleRad) * 200);
-		render();
-		displayVFB(vfb);
-	}
+	camera.beginFrame();
+	render();
+	displayVFB(vfb);
 	waitForUserExit();
 	closeGraphics();
 	printf("Exited cleanly\n");
