@@ -144,7 +144,7 @@ Color Refraction::shade(Ray ray, const IntersectionInfo& info)
 	
 	
 	double myIor;
-	if (dot(n, info.norm) < 0) {
+	if (dot(n, info.norm) > 0) {
 		// n == info.norm
 		myIor = 1.0 / this->ior;
 	} else {
@@ -152,34 +152,17 @@ Color Refraction::shade(Ray ray, const IntersectionInfo& info)
 		myIor = this->ior / 1.0;
 	}
 
-	float fresnelCoeff = fresnel(ray.dir, n, myIor);
-	
-	
-	Color fromRefraction(0, 0, 0);
-	
 	Vector refracted = refract(ray.dir, n, myIor);
 	
 	if (!refracted.isZero()) {
-	//	return Color(0, 0, 0); // total infernal refraction
 		Ray newRay = ray;
 		newRay.start = info.ip - n * 1e-6;
 		newRay.dir = refracted;
 		newRay.depth = ray.depth + 1;
-		fromRefraction = raytrace(newRay) * mult;
+		return raytrace(newRay) * mult;
 	} else {
-		fresnelCoeff = 1.0;
-	}
-	
-	Color fromReflection;
-	
-	Ray newRay = ray;
-	newRay.start = info.ip + n * 1e-6;
-	newRay.dir = reflect(ray.dir, n);
-	newRay.depth = ray.depth + 1;
-
-	fromReflection = raytrace(newRay) * mult;
-
-	return fresnelCoeff * fromReflection + (1 - fresnelCoeff) * fromRefraction;	
+		return Color(0, 0, 0); // total infernal refraction
+	}	
 }
 
 
