@@ -36,6 +36,7 @@
 #include "camera.h"
 #include "geometry.h"
 #include "shading.h"
+#include "environment.h"
 using namespace std;
 
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE];
@@ -68,10 +69,15 @@ double lightIntensity = 50000;
 Color ambientLightColor = Color(1, 1, 1) * 0.5;
 bool antialiasing = false;
 int sphereIndex;
+int cubeIndex;
+CubemapEnvironment env;
 
 void setupScene()
 {
 	Node plane;
+	
+	env.loadMaps("data/env/forest");
+	
 	//CheckerTexture* checkerBW = new CheckerTexture();
 	BitmapTexture* floorTiles = new BitmapTexture("data/floor.bmp");
 	floorTiles->scaling = 1/100.0;
@@ -80,8 +86,14 @@ void setupScene()
 	CheckerTexture* checkerCube = new CheckerTexture(Color(0, 0, 1), Color(0.1, 0.1, 0.1));
 	checkerCube->scaling = 0.2;
 
-	plane.geometry = new Plane;
-	plane.shader = new Lambert(floorTiles);
+	plane.geometry = new Plane(80);
+	
+	Layered* planeShader = new Layered;
+	
+	planeShader->addLayer(new Lambert(floorTiles), Color(1, 1, 1));
+	planeShader->addLayer(new Reflection(1), Color(1, 1, 1) * 0.01);
+	
+	plane.shader = planeShader;
 	nodes.push_back(plane);
 	
 	Node sphere;
@@ -89,18 +101,17 @@ void setupScene()
 	Phong* phong = new Phong(checkerColor);
 	phong->exponent = 20;
 	phong->specularMultiplier = 0.7;
-	sphere.shader = new Lambert(world);
+	sphere.T.translate(Vector(-10, 60, 0));
+	sphere.shader = new Refraction(1.33, Color(1, 1, 1) * 0.95);
 	sphereIndex = int(nodes.size());
 	nodes.push_back(sphere);
 	
 	Node cube;
-	CsgOp* csg = new CsgMinus;
-	csg->left = new Cube(Vector(0, 0, 0), 15);
-	csg->right = new Sphere(Vector(+55, 31, -15), 8);
+	cube.geometry = new Cube(Vector(0, 0, 0), 15);
 	cube.T.rotate(toRadians(30), 0, toRadians(60));
-	cube.T.translate(Vector(+40, 16, 0));
-	cube.geometry = csg;
+	cube.T.translate(Vector(+40, 16, 30));
 	cube.shader = new Lambert(checkerColor);
+	cubeIndex = int(nodes.size());
 	nodes.push_back(cube);
 	
 	camera.pos = Vector(0, 60, -120);
@@ -126,9 +137,10 @@ bool visible(const Vector& a, const Vector& b)
 	return true;
 }
 
-Color raytrace(double x, double y)
+Color raytrace(Ray ray)
 {
-	Ray ray = camera.getScreenRay(x, y);
+	
+	if (ray.depth > MAX_TRACE_DEPTH) return Color(0, 0, 0);
 	
 	Node closestNode;
 	IntersectionInfo closestIntersection;
@@ -142,10 +154,18 @@ Color raytrace(double x, double y)
 		}
 	}
 	
-	if (closestIntersection.dist >= 1e99)
-		return Color(0, 0, 0);
+	if (closestIntersection.dist >= 1e99) {
+		if (env.loaded) return env.getEnvironment(ray.dir);
+		else return Color(0, 0, 0);
+	}
+		
 	
 	return closestNode.shader->shade(ray, closestIntersection);
+}
+
+Color raytrace(double x, double y)
+{
+	return raytrace(camera.getScreenRay(x, y));
 }
 
 void render()
@@ -184,12 +204,14 @@ int main(int argc, char** argv)
 	initGraphics(RESX, RESY);
 	setupScene();
 	Node& sphere = nodes[sphereIndex];
-	for (double angle = 0; angle < 360; angle += 15) {
-		sphere.T.loadIdentity();
-		sphere.T.translate(Vector(-10, 30, 0));
-		sphere.T.scale(1, 0.5, 0.5);
-		sphere.T.rotate(toRadians(angle), toRadians(-55), 0);
-		double angleRad = toRadians(angle);
+	Node& cube = nodes[cubeIndex];
+	for (double offset = 0; offset < 1; offset += 10) {
+		cube.T.translate(Vector(-10, 0, 0));
+		//sphere.T.loadIdentity();
+		//sphere.T.rotate(toRadians(angle), toRadians(-55), 0);
+		//camera.yaw = toRadians(angle);
+		camera.beginFrame();
+		//double angleRad = toRadians(angle);
 		//lightPos = Vector(cos(angleRad) * 200, 200, sin(angleRad) * 200);
 		render();
 		displayVFB(vfb);

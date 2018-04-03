@@ -48,7 +48,9 @@ class Geometry: public Intersectable {
 
 class Plane: public Geometry {
 public:
-	double height = 0.0;
+	double limit;
+	double height;
+	Plane(double limit = 128, double height = 0): limit(limit), height(height) {}
 	
 	bool intersect(Ray ray, IntersectionInfo& info) override;
 };

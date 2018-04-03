@@ -53,3 +53,5 @@ public:
         FileRAII(const FileRAII&) = delete;
         FileRAII& operator = (const FileRAII&) = delete;
 };
+
+bool fileExists(const char* fn);

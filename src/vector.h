@@ -43,6 +43,10 @@ struct Vector {
 	{
 		x = y = z = 0.0;
 	}
+	bool isZero(void) const
+	{
+		return x == 0 && y == 0 && z == 0;
+	}
 	inline double length(void) const
 	{
 		return sqrt(x * x + y * y + z * z);
@@ -174,10 +178,21 @@ inline Vector reflect(const Vector& i, const Vector &n)
 	return i + 2 * dot(-i, n) * n;
 }
 
+// ior = eta1 / eta2
+inline Vector refract(const Vector& i, const Vector& n, double ior)
+{
+	double NdotI = i * n;
+	double k = 1 - (ior * ior) * (1 - NdotI * NdotI);
+	if (k < 0.0)		// Check for total inner reflection
+		return Vector(0, 0, 0);
+	return normalize(ior * i - (ior * NdotI + sqrt(k)) * n);
+}
+
 /// @class Ray
 struct Ray {
 	Vector start;
 	Vector dir; // unit vector!
+	int depth = 0;
 	
 	Ray() {}
 	Ray(const Vector& start, const Vector& dir): start(start), dir(dir) {}

@@ -35,7 +35,10 @@ bool Plane::intersect(Ray ray, IntersectionInfo& info)
 	double unitTravel = fabs(ray.dir.y);
 	double scaling = travelByY / unitTravel;
 	
-	info.ip = ray.start + ray.dir * scaling;
+	Vector ip = ray.start + ray.dir * scaling;
+	if (fabs(ip.x) > limit) return false;
+	if (fabs(ip.z) > limit) return false;
+	info.ip = ip;
 	info.dist = distance(ray.start, info.ip);
 	info.norm = Vector(0, 1, 0);
 	info.u = info.ip.x;

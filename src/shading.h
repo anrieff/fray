@@ -95,3 +95,37 @@ public:
 	
 	Color shade(Ray ray, const IntersectionInfo& info) override;
 };
+
+class Reflection: public Shader {
+public:
+	Color mult = Color(1, 1, 1); // typically Color(0.98, 0.98, 0.98)
+	
+	Reflection(float multiplier = 1): mult(multiplier, multiplier, multiplier) {}
+	
+	Color shade(Ray ray, const IntersectionInfo& info) override;
+};
+
+class Refraction: public Shader {
+public:
+	double ior = 1;
+	Color mult = Color(1, 1, 1);
+	
+	Refraction(double ior, Color mult = Color(1, 1, 1)): ior(ior), mult(mult) {}
+				
+	Color shade(Ray ray, const IntersectionInfo& info) override;
+};
+
+class Layered: public Shader {
+	struct Layer {
+		Shader* shader;
+		Color opacity;
+		Texture* texture;
+	};
+	int numLayers = 0;
+	Layer layers[32];
+public:
+	
+	void addLayer(Shader* shader, Color opacity = Color(1, 1, 1), Texture* texture = nullptr);
+	
+	Color shade(Ray ray, const IntersectionInfo& info) override;
+};

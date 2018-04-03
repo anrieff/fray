@@ -18,46 +18,49 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 /**
- * @File util.cpp
- * @Brief a few useful short functions
+ * @File environment.h
+ * @Brief declarations of the Environment classes
  */
+#pragma once
 
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <sys/stat.h>
+#include "color.h"
+#include "vector.h"
 
-#include <string>
-using namespace std;
+enum CubeOrder {
+	NEGX, // 0
+	NEGY, // 1
+	NEGZ, // 2
+	POSX, // 3
+	POSY, // 4
+	POSZ, // 5
+};
 
-string upCaseString(string s)
-{
-	for (int i = 0; i < (int) s.length(); i++)
-		s[i] = toupper(s[i]);
-	return s;
-}
+class Environment{
+public:
+	virtual ~Environment() {}
+	/// gets a color from the environment at the specified direction
+	virtual Color getEnvironment(const Vector& dir) = 0;
+};
 
-string extensionUpper(const char* fileName)
-{
-	int l = (int) strlen(fileName);
-	if (l < 2) return "";
+class Bitmap;
+class CubemapEnvironment: public Environment {
+	Bitmap* maps[6];
 	
-	for (int i = l - 1; i >= 0; i--) {
-		if (fileName[i] == '.') {
-			string result = "";
-			for  (int j = i + 1; j < l; j++) result += toupper(fileName[j]);
-			return result;
-		}
-	}
-	return "";
-}
+	Color getSide(const Bitmap* bmp, double x, double y);
+public:
+	bool loaded = false;
+	bool loadMaps(const char* folder);
+ 	/// loads a cubemap from 6 separate images, from the specified folder.
+ 	/// The images have to be named "posx.bmp", "negx.bmp", "posy.bmp", ...
+ 	/// (or they may be .exr images, not .bmp).
+ 	/// The folder specification shouldn't include a trailing slash; 
+ 	/// e.g. "/images/cubemaps/cathedral" is OK.
+ 	CubemapEnvironment()
+ 	{
+ 	}
 
-bool fileExists(const char* fn)
-{
-	char temp[512];
-	strcpy(temp, fn);
-	int l = (int) strlen(temp);
-	if (l && temp[l - 1] == '/') temp[--l] = 0;
-	struct stat st;
-	return (0 == stat(temp, &st));
-}
+	~CubemapEnvironment();
+	Color getEnvironment(const Vector& dir);
+    
+};
+

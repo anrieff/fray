@@ -46,6 +46,8 @@
 		<Unit filename="src/camera.h" />
 		<Unit filename="src/color.h" />
 		<Unit filename="src/constants.h" />
+		<Unit filename="src/environment.cpp" />
+		<Unit filename="src/environment.h" />
 		<Unit filename="src/geometry.cpp" />
 		<Unit filename="src/geometry.h" />
 		<Unit filename="src/main.cpp" />

@@ -26,3 +26,5 @@
 #include "vector.h"
 
 bool visible(const Vector& a, const Vector& b);
+
+Color raytrace(Ray ray);

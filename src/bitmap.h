@@ -32,7 +32,7 @@ class Bitmap {
 	Color* data;
 public:
 	Bitmap(); //!< Generates an empty bitmap
-	~Bitmap();
+	virtual ~Bitmap();
 	void freeMem(void); //!< Deletes the memory, associated with the bitmap
 	int getWidth(void) const; //!< Gets the width of the image (X-dimension)
 	int getHeight(void) const; //!< Gets the height of the image (Y-dimension)

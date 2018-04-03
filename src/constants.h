@@ -28,3 +28,5 @@
 #define RESY 600
 #define PI 3.141592653589793238
 #define INF 1e99
+
+#define MAX_TRACE_DEPTH 10
