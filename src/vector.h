@@ -24,6 +24,7 @@
 #pragma once
 
 #include <math.h>
+#include <stdlib.h>
 
 struct Vector {
 	union {
@@ -187,6 +188,44 @@ inline Vector refract(const Vector& i, const Vector& n, double ior)
 		return Vector(0, 0, 0);
 	return normalize(ior * i - (ior * NdotI + sqrt(k)) * n);
 }
+
+// returns b and c, so that:
+// dot(a, b) == 0
+// dot(a, c) == 0
+// dot(b, c) == 0
+inline void orthonormalSystem(const Vector& a, Vector& b, Vector& c)
+{
+	const Vector TEST_VECTORS[2] = {
+		{ 1, 0, 0 },
+		{ 0, 1, 0 },
+	};
+	
+	Vector testVector = TEST_VECTORS[0];
+	
+	if (fabs(dot(testVector, a)) > 0.9) 
+		testVector = TEST_VECTORS[1];
+	
+	b = a ^ testVector;
+	b.normalize();
+	c = a ^ b;
+	//c.normalize()
+}
+
+// length (x, y) <= 1 (distance to origin is <= 1)
+// sqrt(x*x + y*y) <= 1
+inline void randomUnitDiscPoint(double& x, double& y)
+{
+	while (1) {
+		x = drand48();
+		y = drand48();
+		
+		x = x * 2 - 1;
+		y = y * 2 - 1;
+		
+		if (hypot(x, y) <= 1) return;
+	}
+}
+
 
 /// @class Ray
 struct Ray {

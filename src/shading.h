@@ -99,10 +99,13 @@ public:
 };
 
 class Reflection: public Shader {
+	double deflectionScaling;
+	bool pureReflection;
+	int numSamples;
 public:
 	Color mult = Color(1, 1, 1); // typically Color(0.98, 0.98, 0.98)
 	
-	Reflection(float multiplier = 1): mult(multiplier, multiplier, multiplier) {}
+	Reflection(float multiplier = 1, double glossiness = 1.0, int glossinessSamples = 25);
 	
 	Color shade(Ray ray, const IntersectionInfo& info) override;
 };

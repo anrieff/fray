@@ -67,7 +67,7 @@ Vector lightPos (100, 200, -80);
 Color lightColor(1, 1, 0.9);
 double lightIntensity = 50000;
 Color ambientLightColor = Color(1, 1, 1) * 0.5;
-bool antialiasing = false;
+bool antialiasing = true;
 int sphereIndex;
 int cubeIndex;
 CubemapEnvironment env;
@@ -106,11 +106,13 @@ void setupScene()
 	// create a glassy shader by using a:
 	// layer 0 (bottom): refraction shader, ior = 1.6, opacity = 1
 	// layer 1 (top): reflection shader, multiplier 0.95, opacity = fresnel texture with ior = 1.6
-	double GLASS_IOR = 1.6;
+	/*double GLASS_IOR = 1.01;
 	Layered* glassShader = new Layered;
 	glassShader->addLayer(new Refraction(GLASS_IOR));
 	glassShader->addLayer(new Reflection(0.95), Color(1, 1, 1), new FresnelTexture(GLASS_IOR));
-	sphere.shader = glassShader;;
+	sphere.shader = glassShader;*/
+	
+	sphere.shader = new Reflection(0.25, 0.7, 2000);
 	sphereIndex = int(nodes.size());
 	nodes.push_back(sphere);
 	
@@ -189,6 +191,7 @@ void render()
 		{ 0.6, 0.6 },
 	};
 	int numAASamples = COUNT_OF(offsets);
+	unsigned lastUpdate = startTicks;
 	
 	for (int y = 0; y < frameHeight(); y++) {
 		for (int x = 0; x < frameWidth(); x++) {
@@ -201,7 +204,11 @@ void render()
 				vfb[y][x] = avg; // divided by just one, so leave as is
 			}
 		}
-		
+		unsigned currentTime = SDL_GetTicks();
+		if (currentTime - lastUpdate > 100) {
+			lastUpdate = currentTime;
+			displayVFB(vfb);
+		}
 	}
 	unsigned elapsed = SDL_GetTicks() - startTicks;
 	

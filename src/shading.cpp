@@ -118,16 +118,57 @@ Color BitmapTexture::sample(Ray ray, const IntersectionInfo& info)
 	return bmp.getPixel(int_x, int_y);
 }
 
+Reflection::Reflection(float multiplier, double glossiness, int glossinessSamples): mult(multiplier, multiplier, multiplier)
+{
+	pureReflection = (glossiness == 1.0);
+	deflectionScaling = pow(10.0, 2 - 4*glossiness);
+	numSamples = glossinessSamples;
+}
+
 Color Reflection::shade(Ray ray, const IntersectionInfo& info)
 {
 	Vector n = faceforward(ray.dir, info.norm);
 	
-	Ray newRay = ray;
-	newRay.start = info.ip + n * 1e-6;
-	newRay.dir = reflect(ray.dir, n);
-	newRay.depth = ray.depth + 1;
-	
-	return raytrace(newRay) * mult;
+	if (pureReflection) {	
+		Ray newRay = ray;
+		newRay.start = info.ip + n * 1e-6;
+		newRay.dir = reflect(ray.dir, n);
+		newRay.depth = ray.depth + 1;
+		
+		return raytrace(newRay) * mult;
+	} else {
+		Vector b, c;
+		orthonormalSystem(n, b, c);
+		
+		Color sum(0, 0, 0);
+		int numSamplesActual = ray.depth == 0 ? numSamples : LOW_GLOSSY_SAMPLES;
+		for (int i = 0; i < numSamplesActual; i++) {
+			double x, y;
+			Vector reflected;
+			while (1) {
+				randomUnitDiscPoint(x, y);
+				
+				x *= deflectionScaling;
+				y *= deflectionScaling;
+				
+				Vector newNormal = n + b * x + c * y;
+				newNormal.normalize();
+				
+				reflected = reflect(ray.dir, newNormal);
+				
+				if (dot(reflected, n) > 0) break;
+			}
+			
+			Ray newRay = ray;
+			newRay.start = info.ip + n * 1e-6;
+			newRay.dir = reflected;
+			newRay.depth = ray.depth + 1;
+			
+			sum += raytrace(newRay) * mult;
+		}
+		
+		return sum / numSamplesActual;
+	}
 }
 
 inline float fresnel(const Vector& i, const Vector& n, float ior)

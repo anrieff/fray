@@ -30,3 +30,5 @@
 #define INF 1e99
 
 #define MAX_TRACE_DEPTH 10
+
+#define LOW_GLOSSY_SAMPLES 3
