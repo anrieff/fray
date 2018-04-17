@@ -35,6 +35,7 @@
 #include "matrix.h"
 #include "camera.h"
 #include "geometry.h"
+#include "mesh.h"
 #include "shading.h"
 #include "environment.h"
 using namespace std;
@@ -67,7 +68,7 @@ Vector lightPos (100, 200, -80);
 Color lightColor(1, 1, 0.9);
 double lightIntensity = 50000;
 Color ambientLightColor = Color(1, 1, 1) * 0.5;
-bool antialiasing = true;
+bool antialiasing = false;
 int sphereIndex;
 int cubeIndex;
 CubemapEnvironment env;
@@ -96,12 +97,17 @@ void setupScene()
 	plane.shader = planeShader;
 	nodes.push_back(plane);
 	
-	Node sphere;
-	sphere.geometry = new Sphere(Vector(0, 0, 0), 30);
+	Mesh* heartGeom = new Mesh;
+	Node heartNode;
+	heartGeom->loadFromOBJ("data/geom/heart.obj");
+	heartGeom->beginRender();
+	heartNode.geometry = heartGeom;
 	Phong* phong = new Phong(checkerColor);
 	phong->exponent = 20;
 	phong->specularMultiplier = 0.7;
-	sphere.T.translate(Vector(-10, 60, 0));
+	heartNode.T.scale(10, 10, 10);
+	heartNode.T.rotate(90, 0, 0);
+	heartNode.T.translate(Vector(-10, 20, 0));
 	
 	// create a glassy shader by using a:
 	// layer 0 (bottom): refraction shader, ior = 1.6, opacity = 1
@@ -112,9 +118,9 @@ void setupScene()
 	glassShader->addLayer(new Reflection(0.95), Color(1, 1, 1), new FresnelTexture(GLASS_IOR));
 	sphere.shader = glassShader;*/
 	
-	sphere.shader = new Reflection(0.25, 0.7, 2000);
+	heartNode.shader = /*new Reflection(0.95, 1.0, 2000)*/phong;
 	sphereIndex = int(nodes.size());
-	nodes.push_back(sphere);
+	nodes.push_back(heartNode);
 	
 	Node cube;
 	cube.geometry = new Cube(Vector(0, 0, 0), 15);

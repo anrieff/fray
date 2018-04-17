@@ -18,43 +18,40 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 /**
- * @File util.h
- * @Brief a few useful short functions
+ * @File mesh.h
+ * @Brief Contains the Mesh class.
  */
 #pragma once
-
-#include <stdlib.h>
-#include <math.h>
-#include <string>
 #include <vector>
-#include "constants.h"
+#include "geometry.h"
+#include "vector.h"
 
-// get the count (number of elements of some array). E.g. "int a[8]; int b[11][2]; COUNT_OF(a) = 8; COUNT_OF(b) = 11"
-#define COUNT_OF(someArray) (int(sizeof(someArray) / sizeof(someArray[0])))
-
-inline double signOf(double x) { return x > 0 ? +1 : -1; }
-inline double sqr(double a) { return a * a; }
-inline double toRadians(double angle) { return angle / 180.0 * PI; }
-inline double toDegrees(double angle_rad) { return angle_rad / PI * 180.0; }
-inline int nearestInt(float x) { return (int) floor(x + 0.5f); }
-
-/// returns a random floating-point number in [0..1).
-/// This is not a very good implementation. A better method is to be employed soon.
-inline float randomFloat() { return rand() / (float) RAND_MAX; }
-
-std::string upCaseString(std::string s); //!< returns the string in UPPERCASE
-std::string extensionUpper(const char* fileName); //!< Given a filename, return its extension in UPPERCASE
-std::vector<std::string> tokenize(std::string s);
-std::vector<std::string> split(std::string s, char separator);
-
-/// a simple RAII class for FILE* pointers.
-class FileRAII {
-        FILE* held;
-public:
-        FileRAII(FILE* init): held(init) {}
-        ~FileRAII() { if (held) fclose(held); held = NULL; }
-        FileRAII(const FileRAII&) = delete;
-        FileRAII& operator = (const FileRAII&) = delete;
+/// A structure to represent a single triangle in the mesh
+struct Triangle {
+	int v[3]; //!< holds indices to the three vertices of the triangle (indexes in the `vertices' array in the Mesh)
+	int n[3]; //!< holds indices to the three normals of the triangle (indexes in the `normals' array)
+	int t[3]; //!< holds indices to the three texture coordinates of the triangle (indexes in the `uvs' array)
+	Vector gnormal; //!< The geometric normal of the mesh (AB ^ AC, normalized)
 };
 
-bool fileExists(const char* fn);
+class Mesh: public Geometry {
+protected:
+	std::vector<Vector> vertices;
+	std::vector<Vector> normals;
+	std::vector<Vector> uvs;
+	std::vector<Triangle> triangles;
+
+	void computeBoundingGeometry();
+	void prepareTriangles();
+public:
+
+	bool faceted = false;
+
+	~Mesh();
+
+	bool loadFromOBJ(const char* filename);
+
+	void beginRender();
+
+	bool intersect(Ray ray, IntersectionInfo& info) override;
+};
