@@ -53,9 +53,89 @@ inline double det(const Vector& a, const Vector& b, const Vector& c)
 	return (a^b) * c;
 }
 
+bool Mesh::intersectSingleTriangle(Ray ray, const Triangle& T,
+									double& minDist,
+									double& l2, double& l3)
+{
+	// backface culling?
+	if (backfaceCulling && dot(ray.dir, T.gnormal) > 0) return false;
+	
+	const Vector& A = vertices[T.v[0]];
+	const Vector& B = vertices[T.v[1]];
+	const Vector& C = vertices[T.v[2]];
+	Vector AB = B - A;
+	Vector AC = C - A;
+	Vector D = -ray.dir;
+	
+	double Dcr = det(AB, AC, D);
+	
+	if (fabs(Dcr) < 1e-12) return false;
+	
+	Vector H = ray.start - A;
+	
+	double lambda2 = det(H, AC, D) / Dcr;
+	double lambda3 = det(AB, H, D) / Dcr;
+	double gamma   = det(AB, AC, H) / Dcr;
+	
+	if (gamma < 0 || gamma > minDist) return false;
+	if (lambda2 < 0 || lambda2 > 1 || lambda3 < 0 || lambda3 > 1) return false;
+	
+	double lambda1 = 1 - (lambda2 + lambda3);
+	if (lambda1 < 0) return false;
+	
+	minDist = gamma;
+	l2 = lambda2;
+	l3 = lambda3;
+	return true;
+}
+
 bool Mesh::intersect(Ray ray, IntersectionInfo& info)
 {
-	return false;
+	if (!boundingSphere.intersect(ray, info))
+		return false;
+	
+	info.dist = INF;
+	bool found = false;
+	
+	for (auto& T: triangles) {
+		double lambda2, lambda3;
+		if (intersectSingleTriangle(ray, T, info.dist, lambda2, lambda3)) {
+			found = true;
+			info.geom = this;
+			info.ip = ray.start + ray.dir * info.dist;
+			if (faceted || normals.empty()) {
+				info.norm = T.gnormal;
+			} else {
+				const Vector& nA = normals[T.n[0]];
+				const Vector& nB = normals[T.n[1]];
+				const Vector& nC = normals[T.n[2]];
+				
+				info.norm = nA + (nB - nA) * lambda2 + (nC - nA) * lambda3;
+				info.norm.normalize();
+			}
+			
+			if (uvs.empty()) {
+				info.u = info.v = 0;
+			} else {
+				const Vector& tA = uvs[T.t[0]];
+				const Vector& tB = uvs[T.t[1]];
+				const Vector& tC = uvs[T.t[2]];
+				
+				Vector texCoord = tA + (tB - tA) * lambda2 + (tC - tA) * lambda3;
+				info.u = texCoord.x;
+				info.v = texCoord.y;
+				
+				if (bumpMap) {
+					float dx, dy;
+					bumpMap->getDeflection(info, dx, dy);
+					info.norm += dx * T.dNdx + dy * T.dNdy;
+					info.norm.normalize();
+				}				
+			}
+		}
+	}
+	
+	return found;
 }
 
 static int toInt(const string& s)
@@ -150,7 +230,7 @@ bool Mesh::loadFromOBJ(const char* filename)
 	return true;
 }
 
-/*
+
 static void solve2D(Vector A, Vector B, Vector C, double& x, double& y)
 {
 	// solve: x * A + y * B = C
@@ -161,11 +241,17 @@ static void solve2D(Vector A, Vector B, Vector C, double& x, double& y)
 	x =         (     h[0] * mat[1][1] -      h[1] * mat[0][1]) / Dcr;
 	y =         (mat[0][0] *      h[1] - mat[1][0] *      h[0]) / Dcr;
 }
-*/
+
 
 void Mesh::prepareTriangles()
 {
-
+	boundingSphere.O.makeZero();
+	double R = 0;
+	for (auto& vert: vertices) {
+		R = max(R, distance(vert, boundingSphere.O));
+	}
+	boundingSphere.R = R;
+	
 	for (auto& t: triangles) {
 		Vector A = vertices[t.v[0]];
 		Vector B = vertices[t.v[1]];
@@ -174,5 +260,28 @@ void Mesh::prepareTriangles()
 		Vector AC = C - A;
 		t.gnormal = AB ^ AC;
 		t.gnormal.normalize();
+		
+		if (!uvs.empty() && !normals.empty()) {
+			Vector tA = uvs[t.t[0]];
+			Vector tB = uvs[t.t[1]];
+			Vector tC = uvs[t.t[2]];
+
+			Vector tAB = tB - tA;
+			Vector tAC = tC - tA;
+			
+			double px, qx, py, qy;
+			solve2D(tAB, tAC, Vector(1, 0, 0), px, qx);
+			// px * tAB + qx * tAC = (1, 0, 0)
+			solve2D(tAB, tAC, Vector(0, 1, 0), py, qy);
+			// py * tAB + qy * tAC = (0, 1, 0)
+			
+			t.dNdx = px * AB + qx * AC;
+			t.dNdy = py * AB + qy * AC;
+			t.dNdx.normalize();
+			t.dNdy.normalize();
+		} else {
+			t.dNdx.makeZero();
+			t.dNdy.makeZero();
+		}
 	}
 }

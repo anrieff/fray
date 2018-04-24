@@ -85,7 +85,7 @@ void setupScene()
 	//BitmapTexture* world = new BitmapTexture("data/world.bmp");
 	CheckerTexture* checkerColor = new CheckerTexture(Color(1, 0.5, 0.5), Color(0.5, 1.0, 1.0));
 	CheckerTexture* checkerCube = new CheckerTexture(Color(0, 0, 1), Color(0.1, 0.1, 0.1));
-	checkerCube->scaling = 0.2;
+	checkerCube->scaling = 2;
 
 	plane.geometry = new Plane(80);
 	
@@ -99,26 +99,28 @@ void setupScene()
 	
 	Mesh* heartGeom = new Mesh;
 	Node heartNode;
-	heartGeom->loadFromOBJ("data/geom/heart.obj");
+	Phong* cubeTex = new Phong(new BitmapTexture("data/texture/zar-texture.bmp"));
+	heartGeom->loadFromOBJ("data/geom/truncated_cube.obj");
+	heartGeom->bumpMap = new BumpTexture("data/texture/zar-bump.bmp");
+	heartGeom->faceted = true;
 	heartGeom->beginRender();
 	heartNode.geometry = heartGeom;
-	Phong* phong = new Phong(checkerColor);
+	Phong* phong = new Phong(checkerCube);
 	phong->exponent = 20;
 	phong->specularMultiplier = 0.7;
-	heartNode.T.scale(10, 10, 10);
+	heartNode.T.scale(5);
 	heartNode.T.rotate(90, 0, 0);
 	heartNode.T.translate(Vector(-10, 20, 0));
 	
 	// create a glassy shader by using a:
 	// layer 0 (bottom): refraction shader, ior = 1.6, opacity = 1
 	// layer 1 (top): reflection shader, multiplier 0.95, opacity = fresnel texture with ior = 1.6
-	/*double GLASS_IOR = 1.01;
+	double GLASS_IOR = 1.6;
 	Layered* glassShader = new Layered;
 	glassShader->addLayer(new Refraction(GLASS_IOR));
 	glassShader->addLayer(new Reflection(0.95), Color(1, 1, 1), new FresnelTexture(GLASS_IOR));
-	sphere.shader = glassShader;*/
 	
-	heartNode.shader = /*new Reflection(0.95, 1.0, 2000)*/phong;
+	heartNode.shader = cubeTex /*new Reflection(0.95, 1.0, 2000)*/ /*phong*/;
 	sphereIndex = int(nodes.size());
 	nodes.push_back(heartNode);
 	

@@ -55,6 +55,15 @@ public:
 	Color sample(Ray ray, const IntersectionInfo& info) override;
 };
 
+class BumpTexture {
+	Bitmap bumpTex;
+public:
+	double scaling = 1;
+	float bumpIntensity = 10.0f;
+	BumpTexture(const char* filename);
+	void getDeflection(const IntersectionInfo& info, float& dx, float& dy);
+};
+
 class Shader {
 public:
 	Texture* diffuseTex;

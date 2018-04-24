@@ -246,3 +246,37 @@ Color FresnelTexture::sample(Ray ray, const IntersectionInfo& info)
 	
 	return Color(f, f, f);
 }
+
+BumpTexture::BumpTexture(const char* filename)
+{
+	Bitmap sourceTex;
+	sourceTex.loadImage(filename);
+	
+	bumpTex.generateEmptyImage(sourceTex.getWidth(), sourceTex.getHeight());
+	
+	for (int y = 0; y < sourceTex.getHeight(); y++)
+		for (int x = 0; x < sourceTex.getWidth(); x++) {
+			int right = min(sourceTex.getWidth() - 1, x + 1);
+			int bottom = min(sourceTex.getHeight() - 1, y + 1);
+			float dx =   sourceTex.getPixel(x, y).intensity()
+			           - sourceTex.getPixel(right, y).intensity();
+			float dy =   sourceTex.getPixel(x, y).intensity()
+			           - sourceTex.getPixel(x, bottom).intensity();
+			bumpTex.setPixel(x, y, Color(dx, dy, 0));
+		}
+}
+
+void BumpTexture::getDeflection(const IntersectionInfo& info, float& dx, float& dy)
+{
+	int int_x = int(floor(info.u * scaling * bumpTex.getWidth()));
+	int int_y = int(floor(info.v * scaling * bumpTex.getHeight()));
+	
+	int_x %= bumpTex.getWidth();
+	int_y %= bumpTex.getHeight();
+	if (int_x < 0) int_x += bumpTex.getWidth();
+	if (int_y < 0) int_y += bumpTex.getHeight();
+	
+	Color t = bumpTex.getPixel(int_x, int_y);
+	dx = t.r * bumpIntensity;
+	dy = t.g * bumpIntensity;
+}

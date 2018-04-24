@@ -81,6 +81,7 @@ struct Transform {
 	// setup the transform:
 	void loadIdentity();
 	
+	void scale(double m) { scale(m, m, m); }
 	void scale(double x, double y, double z);
 	void rotate(double yaw, double pitch, double roll);
 	void translate(const Vector& t);

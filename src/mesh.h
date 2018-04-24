@@ -24,6 +24,7 @@
 #pragma once
 #include <vector>
 #include "geometry.h"
+#include "shading.h"
 #include "vector.h"
 
 /// A structure to represent a single triangle in the mesh
@@ -32,7 +33,10 @@ struct Triangle {
 	int n[3]; //!< holds indices to the three normals of the triangle (indexes in the `normals' array)
 	int t[3]; //!< holds indices to the three texture coordinates of the triangle (indexes in the `uvs' array)
 	Vector gnormal; //!< The geometric normal of the mesh (AB ^ AC, normalized)
+	Vector dNdx, dNdy; //!< tangent and binormal vectors for this triangle
 };
+
+struct Texture;
 
 class Mesh: public Geometry {
 protected:
@@ -40,12 +44,19 @@ protected:
 	std::vector<Vector> normals;
 	std::vector<Vector> uvs;
 	std::vector<Triangle> triangles;
+	
+	Sphere boundingSphere;
 
 	void computeBoundingGeometry();
 	void prepareTriangles();
+	bool intersectSingleTriangle(Ray ray, const Triangle& T,
+		     					 double& minDist,
+								 double& l2, double& l3);
 public:
 
 	bool faceted = false;
+	bool backfaceCulling = true;
+	BumpTexture* bumpMap = nullptr;
 
 	~Mesh();
 
