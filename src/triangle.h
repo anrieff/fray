@@ -33,5 +33,6 @@ struct Triangle {
 	Vector gnormal; //!< The geometric normal of the mesh (AB ^ AC, normalized)
 	Vector dNdx, dNdy; //!< tangent and binormal vectors for this triangle
 
-	bool intersect(Ray ray, const Vector& A, const Vector& B, const Vector& C, double& minDist, double& l2, double& l3);
+	static bool intersect(Ray ray, const Vector& A, const Vector& B, const Vector& C, double& minDist,
+						  double& l2, double& l3);
 };

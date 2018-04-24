@@ -29,6 +29,7 @@
 #include "mesh.h"
 #include "constants.h"
 #include "color.h"
+#include "bbox.h"
 using std::max;
 using std::vector;
 using std::string;
@@ -42,6 +43,12 @@ void Mesh::beginRender()
 
 void Mesh::computeBoundingGeometry()
 {
+	boundingSphere.O.makeZero();
+	double R = 0;
+	for (auto& vert: vertices) {
+		R = max(R, distance(vert, boundingSphere.O));
+	}
+	boundingSphere.R = R;
 }
 
 Mesh::~Mesh()
@@ -210,12 +217,6 @@ static void solve2D(Vector A, Vector B, Vector C, double& x, double& y)
 
 void Mesh::prepareTriangles()
 {
-	boundingSphere.O.makeZero();
-	double R = 0;
-	for (auto& vert: vertices) {
-		R = max(R, distance(vert, boundingSphere.O));
-	}
-	boundingSphere.R = R;
 	
 	for (auto& t: triangles) {
 		Vector A = vertices[t.v[0]];
