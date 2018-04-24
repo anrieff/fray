@@ -42,6 +42,8 @@ protected:
 
 	void computeBoundingGeometry();
 	void prepareTriangles();
+	bool intersectTriangle(const Ray& ray, const Triangle& T, IntersectionInfo& info);
+
 public:
 
 	bool faceted = false;

@@ -55,6 +55,53 @@ Mesh::~Mesh()
 {
 }
 
+bool Mesh::intersectTriangle(const Ray& ray, const Triangle& T, IntersectionInfo& info)
+{
+	double lambda2, lambda3;
+	// backface culling?
+	if (backfaceCulling && dot(ray.dir, T.gnormal) > 0) return false;
+	const Vector& A = vertices[T.v[0]];
+	const Vector& B = vertices[T.v[1]];
+	const Vector& C = vertices[T.v[2]];
+
+	if (T.intersect(ray, A, B, C, info.dist, lambda2, lambda3)) {
+		info.geom = this;
+		info.ip = ray.start + ray.dir * info.dist;
+		if (faceted || normals.empty()) {
+			info.norm = T.gnormal;
+		} else {
+			const Vector& nA = normals[T.n[0]];
+			const Vector& nB = normals[T.n[1]];
+			const Vector& nC = normals[T.n[2]];
+			
+			info.norm = nA + (nB - nA) * lambda2 + (nC - nA) * lambda3;
+			info.norm.normalize();
+		}
+		
+		if (uvs.empty()) {
+			info.u = info.v = 0;
+		} else {
+			const Vector& tA = uvs[T.t[0]];
+			const Vector& tB = uvs[T.t[1]];
+			const Vector& tC = uvs[T.t[2]];
+			
+			Vector texCoord = tA + (tB - tA) * lambda2 + (tC - tA) * lambda3;
+			info.u = texCoord.x;
+			info.v = texCoord.y;
+			
+			if (bumpMap) {
+				float dx, dy;
+				bumpMap->getDeflection(info, dx, dy);
+				info.norm += dx * T.dNdx + dy * T.dNdy;
+				info.norm.normalize();
+			}				
+		}
+		return true;
+	}
+	
+	return false;
+}
+
 bool Mesh::intersect(Ray ray, IntersectionInfo& info)
 {
 	if (!boundingSphere.intersect(ray, info))
@@ -64,46 +111,8 @@ bool Mesh::intersect(Ray ray, IntersectionInfo& info)
 	bool found = false;
 	
 	for (auto& T: triangles) {
-		double lambda2, lambda3;
-		// backface culling?
-		if (backfaceCulling && dot(ray.dir, T.gnormal) > 0) continue;
-		const Vector& A = vertices[T.v[0]];
-		const Vector& B = vertices[T.v[1]];
-		const Vector& C = vertices[T.v[2]];
-
-		if (T.intersect(ray, A, B, C, info.dist, lambda2, lambda3)) {
+		if (intersectTriangle(ray, T, info)) {
 			found = true;
-			info.geom = this;
-			info.ip = ray.start + ray.dir * info.dist;
-			if (faceted || normals.empty()) {
-				info.norm = T.gnormal;
-			} else {
-				const Vector& nA = normals[T.n[0]];
-				const Vector& nB = normals[T.n[1]];
-				const Vector& nC = normals[T.n[2]];
-				
-				info.norm = nA + (nB - nA) * lambda2 + (nC - nA) * lambda3;
-				info.norm.normalize();
-			}
-			
-			if (uvs.empty()) {
-				info.u = info.v = 0;
-			} else {
-				const Vector& tA = uvs[T.t[0]];
-				const Vector& tB = uvs[T.t[1]];
-				const Vector& tC = uvs[T.t[2]];
-				
-				Vector texCoord = tA + (tB - tA) * lambda2 + (tC - tA) * lambda3;
-				info.u = texCoord.x;
-				info.v = texCoord.y;
-				
-				if (bumpMap) {
-					float dx, dy;
-					bumpMap->getDeflection(info, dx, dy);
-					info.norm += dx * T.dNdx + dy * T.dNdy;
-					info.norm.normalize();
-				}				
-			}
 		}
 	}
 	
