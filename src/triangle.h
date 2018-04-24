@@ -18,41 +18,20 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 /**
- * @File mesh.h
- * @Brief Contains the Mesh class.
+ * @File triangle.h
+ * @Brief Contains the Triangle class
  */
 #pragma once
-#include <vector>
-#include "geometry.h"
-#include "shading.h"
+
 #include "vector.h"
-#include "triangle.h"
+ 
+/// A structure to represent a single triangle in the mesh
+struct Triangle {
+	int v[3]; //!< holds indices to the three vertices of the triangle (indexes in the `vertices' array in the Mesh)
+	int n[3]; //!< holds indices to the three normals of the triangle (indexes in the `normals' array)
+	int t[3]; //!< holds indices to the three texture coordinates of the triangle (indexes in the `uvs' array)
+	Vector gnormal; //!< The geometric normal of the mesh (AB ^ AC, normalized)
+	Vector dNdx, dNdy; //!< tangent and binormal vectors for this triangle
 
-
-struct Texture;
-
-class Mesh: public Geometry {
-protected:
-	std::vector<Vector> vertices;
-	std::vector<Vector> normals;
-	std::vector<Vector> uvs;
-	std::vector<Triangle> triangles;
-	
-	Sphere boundingSphere;
-
-	void computeBoundingGeometry();
-	void prepareTriangles();
-public:
-
-	bool faceted = false;
-	bool backfaceCulling = true;
-	BumpTexture* bumpMap = nullptr;
-
-	~Mesh();
-
-	bool loadFromOBJ(const char* filename);
-
-	void beginRender();
-
-	bool intersect(Ray ray, IntersectionInfo& info) override;
+	bool intersect(Ray ray, const Vector& A, const Vector& B, const Vector& C, double& minDist, double& l2, double& l3);
 };

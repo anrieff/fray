@@ -48,47 +48,6 @@ Mesh::~Mesh()
 {
 }
 
-inline double det(const Vector& a, const Vector& b, const Vector& c)
-{
-	return (a^b) * c;
-}
-
-bool Mesh::intersectSingleTriangle(Ray ray, const Triangle& T,
-									double& minDist,
-									double& l2, double& l3)
-{
-	// backface culling?
-	if (backfaceCulling && dot(ray.dir, T.gnormal) > 0) return false;
-	
-	const Vector& A = vertices[T.v[0]];
-	const Vector& B = vertices[T.v[1]];
-	const Vector& C = vertices[T.v[2]];
-	Vector AB = B - A;
-	Vector AC = C - A;
-	Vector D = -ray.dir;
-	
-	double Dcr = det(AB, AC, D);
-	
-	if (fabs(Dcr) < 1e-12) return false;
-	
-	Vector H = ray.start - A;
-	
-	double lambda2 = det(H, AC, D) / Dcr;
-	double lambda3 = det(AB, H, D) / Dcr;
-	double gamma   = det(AB, AC, H) / Dcr;
-	
-	if (gamma < 0 || gamma > minDist) return false;
-	if (lambda2 < 0 || lambda2 > 1 || lambda3 < 0 || lambda3 > 1) return false;
-	
-	double lambda1 = 1 - (lambda2 + lambda3);
-	if (lambda1 < 0) return false;
-	
-	minDist = gamma;
-	l2 = lambda2;
-	l3 = lambda3;
-	return true;
-}
-
 bool Mesh::intersect(Ray ray, IntersectionInfo& info)
 {
 	if (!boundingSphere.intersect(ray, info))
@@ -99,7 +58,13 @@ bool Mesh::intersect(Ray ray, IntersectionInfo& info)
 	
 	for (auto& T: triangles) {
 		double lambda2, lambda3;
-		if (intersectSingleTriangle(ray, T, info.dist, lambda2, lambda3)) {
+		// backface culling?
+		if (backfaceCulling && dot(ray.dir, T.gnormal) > 0) continue;
+		const Vector& A = vertices[T.v[0]];
+		const Vector& B = vertices[T.v[1]];
+		const Vector& C = vertices[T.v[2]];
+
+		if (T.intersect(ray, A, B, C, info.dist, lambda2, lambda3)) {
 			found = true;
 			info.geom = this;
 			info.ip = ray.start + ray.dir * info.dist;

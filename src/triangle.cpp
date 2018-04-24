@@ -18,41 +18,42 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 /**
- * @File mesh.h
- * @Brief Contains the Mesh class.
+ * @File triangle.cpp
+ * @Brief Methods of the Triangle class
  */
-#pragma once
-#include <vector>
-#include "geometry.h"
-#include "shading.h"
-#include "vector.h"
+
 #include "triangle.h"
 
+inline double det(const Vector& a, const Vector& b, const Vector& c)
+{
+	return (a^b) * c;
+}
 
-struct Texture;
-
-class Mesh: public Geometry {
-protected:
-	std::vector<Vector> vertices;
-	std::vector<Vector> normals;
-	std::vector<Vector> uvs;
-	std::vector<Triangle> triangles;
+bool Triangle::intersect(Ray ray, const Vector& A, const Vector& B, const Vector& C, double& minDist,
+						 double& l2, double& l3)
+{
+	Vector AB = B - A;
+	Vector AC = C - A;
+	Vector D = -ray.dir;
 	
-	Sphere boundingSphere;
-
-	void computeBoundingGeometry();
-	void prepareTriangles();
-public:
-
-	bool faceted = false;
-	bool backfaceCulling = true;
-	BumpTexture* bumpMap = nullptr;
-
-	~Mesh();
-
-	bool loadFromOBJ(const char* filename);
-
-	void beginRender();
-
-	bool intersect(Ray ray, IntersectionInfo& info) override;
-};
+	double Dcr = det(AB, AC, D);
+	
+	if (fabs(Dcr) < 1e-12) return false;
+	
+	Vector H = ray.start - A;
+	
+	double lambda2 = det(H, AC, D) / Dcr;
+	double lambda3 = det(AB, H, D) / Dcr;
+	double gamma   = det(AB, AC, H) / Dcr;
+	
+	if (gamma < 0 || gamma > minDist) return false;
+	if (lambda2 < 0 || lambda2 > 1 || lambda3 < 0 || lambda3 > 1) return false;
+	
+	double lambda1 = 1 - (lambda2 + lambda3);
+	if (lambda1 < 0) return false;
+	
+	minDist = gamma;
+	l2 = lambda2;
+	l3 = lambda3;
+	return true;
+}
