@@ -64,9 +64,9 @@ struct Node: public Intersectable {
 
 Camera camera;
 vector<Node> nodes;
-Vector lightPos (100, 200, -80);
+Vector lightPos (100, 300, -80);
 Color lightColor(1, 1, 0.9);
-double lightIntensity = 50000;
+double lightIntensity = 70000;
 Color ambientLightColor = Color(1, 1, 1) * 0.5;
 bool antialiasing = false;
 int sphereIndex;
@@ -84,15 +84,15 @@ void setupScene()
 	floorTiles->scaling = 1/100.0;
 	//BitmapTexture* world = new BitmapTexture("data/world.bmp");
 	CheckerTexture* checkerColor = new CheckerTexture(Color(1, 0.5, 0.5), Color(0.5, 1.0, 1.0));
-	CheckerTexture* checkerCube = new CheckerTexture(Color(0, 0, 1), Color(0.1, 0.1, 0.1));
-	checkerCube->scaling = 2;
+	CheckerTexture* checkerCube = new CheckerTexture(Color(1, 1, 1), Color(0.5, 0.5, 0.5));
+	checkerCube->scaling = 6;
 
 	plane.geometry = new Plane(80);
 	
 	Layered* planeShader = new Layered;
 	
 	planeShader->addLayer(new Lambert(floorTiles), Color(1, 1, 1));
-	planeShader->addLayer(new Reflection(1), Color(1, 1, 1) * 0.01);
+	planeShader->addLayer(new Reflection(1), Color(1, 1, 1) * 0.1);
 	
 	plane.shader = planeShader;
 	nodes.push_back(plane);
@@ -102,6 +102,7 @@ void setupScene()
 	Phong* cubeTex = new Phong(new BitmapTexture("data/texture/zar-texture.bmp"));
 	heartGeom->loadFromOBJ("data/geom/truncated_cube.obj");
 	heartGeom->bumpMap = new BumpTexture("data/texture/zar-bump.bmp");
+	heartGeom->bumpMap->bumpIntensity = 10;
 	heartGeom->faceted = true;
 	heartGeom->beginRender();
 	heartNode.geometry = heartGeom;
@@ -111,6 +112,18 @@ void setupScene()
 	heartNode.T.scale(5);
 	heartNode.T.rotate(90, 0, 0);
 	heartNode.T.translate(Vector(-10, 20, 0));
+
+	Mesh* teapot = new Mesh;
+	teapot->loadFromOBJ("data/geom/teapot_hires.obj");
+	teapot->beginRender();
+	teapot->useKD = true;
+	Node teapotNode;
+	teapotNode.geometry = teapot;
+	teapotNode.shader = new Lambert(checkerCube);
+	teapotNode.T.scale(20);
+	teapotNode.T.rotate(90, 0, 0);
+	teapotNode.T.translate(Vector(60, 0, -30));
+	nodes.push_back(teapotNode);
 	
 	// create a glassy shader by using a:
 	// layer 0 (bottom): refraction shader, ior = 1.6, opacity = 1
@@ -120,7 +133,7 @@ void setupScene()
 	glassShader->addLayer(new Refraction(GLASS_IOR));
 	glassShader->addLayer(new Reflection(0.95), Color(1, 1, 1), new FresnelTexture(GLASS_IOR));
 	
-	heartNode.shader = cubeTex /*new Reflection(0.95, 1.0, 2000)*/ /*phong*/;
+	heartNode.shader = cubeTex;
 	sphereIndex = int(nodes.size());
 	nodes.push_back(heartNode);
 	

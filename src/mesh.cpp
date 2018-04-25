@@ -26,6 +26,7 @@
 #include <string.h>
 #include <algorithm>
 #include <numeric>
+#include <SDL/SDL.h>
 #include "mesh.h"
 #include "constants.h"
 #include "color.h"
@@ -43,12 +44,28 @@ void Mesh::beginRender()
 
 void Mesh::computeBoundingGeometry()
 {
-	boundingSphere.O.makeZero();
-	double R = 0;
+//	boundingSphere.O.makeZero();
+//	double R = 0;
+//	for (auto& vert: vertices) {
+//		R = max(R, distance(vert, boundingSphere.O));
+//	}
+//	boundingSphere.R = R;
+	bbox.makeEmpty();
 	for (auto& vert: vertices) {
-		R = max(R, distance(vert, boundingSphere.O));
+		bbox.add(vert);
 	}
-	boundingSphere.R = R;
+	
+	vector<int> allTriangles;
+	for (int i = 0; i < int(triangles.size()); i++)
+		allTriangles.push_back(i);
+	
+	unsigned start = SDL_GetTicks();
+	kdRoot = new KDTreeNode;
+	buildKD(kdRoot, allTriangles, bbox, 0);
+	unsigned end = SDL_GetTicks();
+	
+	printf("KD Tree for %d triangles built in %u milliseconds (%d nodes, max depth = %d, avg depth = %.1f)\n", 
+			int(triangles.size()), end - start, numNodes, maxTreeDepth, nodeDepthSum / float(numNodes));
 }
 
 Mesh::~Mesh()
@@ -102,17 +119,22 @@ bool Mesh::intersectTriangle(const Ray& ray, const Triangle& T, IntersectionInfo
 	return false;
 }
 
+
 bool Mesh::intersect(Ray ray, IntersectionInfo& info)
 {
-	if (!boundingSphere.intersect(ray, info))
+	if (!bbox.testIntersect(ray))
 		return false;
 	
 	info.dist = INF;
 	bool found = false;
 	
-	for (auto& T: triangles) {
-		if (intersectTriangle(ray, T, info)) {
-			found = true;
+	if (useKD && kdRoot) {
+		found = intersectKD(ray, info, kdRoot, bbox);
+	} else {
+		for (auto& T: triangles) {
+			if (intersectTriangle(ray, T, info)) {
+				found = true;
+			}
 		}
 	}
 	
@@ -259,4 +281,94 @@ void Mesh::prepareTriangles()
 			t.dNdy.makeZero();
 		}
 	}
+	
+	printf("Mesh loaded, %d triangles\n", int(triangles.size()));
+}
+
+inline double findOptimalSplitPlane(const vector<int>& triangleIndices, BBox bbox, Axis axis)
+{
+	return (bbox.vmin[int(axis)] + bbox.vmax[int(axis)]) * 0.5; // <- this could be improved a lot!
+}
+
+void Mesh::buildKD(KDTreeNode*& node, const vector<int>& triangleIndices, BBox bbox, int depth)
+{
+	numNodes++;
+	maxTreeDepth = max(maxTreeDepth, depth);
+	if (int(triangleIndices.size()) <= MAX_TRIANGLES_PER_LEAF || depth > MAX_DEPTH) {
+		// make a leaf node:
+		node->axis = Axis::AXIS_NONE;
+		node->left = node->right = nullptr;
+		
+		node->triangles = triangleIndices;
+		nodeDepthSum += depth;
+		return;
+	}
+	
+	node->axis = Axis(depth % 3);
+	node->splitPos = findOptimalSplitPlane(triangleIndices, bbox, node->axis);
+	
+	BBox leftbbox, rightbbox;
+	bbox.split(node->axis, node->splitPos, leftbbox, rightbbox);
+	
+	vector<int> leftTriangles, rightTriangles;
+	for (auto& ti: triangleIndices) {
+		Triangle& T = triangles[ti];
+		const Vector& A = vertices[T.v[0]];
+		const Vector& B = vertices[T.v[1]];
+		const Vector& C = vertices[T.v[2]];
+		
+		if (leftbbox.intersectTriangle(A, B, C))
+			leftTriangles.push_back(ti);
+		
+		if (rightbbox.intersectTriangle(A, B, C))
+			rightTriangles.push_back(ti);
+	}
+	
+	node->left = new KDTreeNode;
+	node->right = new KDTreeNode;
+	buildKD(node->left, leftTriangles, leftbbox, depth + 1);
+	buildKD(node->right, rightTriangles, rightbbox, depth + 1);
+	nodeDepthSum += depth;
+}
+
+bool Mesh::intersectKD(Ray ray, IntersectionInfo& info, KDTreeNode* node, const BBox& bbox)
+{
+	// is it leaf?
+	if (node->axis == Axis::AXIS_NONE) {
+		bool found = false;
+		for (int idx: node->triangles) {
+			Triangle& T = this->triangles[idx];
+			if (intersectTriangle(ray, T, info))
+				found = true;
+		}
+		
+		return found && bbox.inside(info.ip);
+	}
+	
+	// binary node:
+	BBox childBBoxen[2];
+	
+	bbox.split(node->axis, node->splitPos, childBBoxen[0], childBBoxen[1]);
+	
+	int axis = int(node->axis);
+	
+	int traverseOrder[2];
+	if (ray.start[axis] < node->splitPos) {
+		traverseOrder[0] = 0;
+		traverseOrder[1] = 1;
+	} else {
+		traverseOrder[0] = 1;
+		traverseOrder[1] = 0;
+	}
+	
+	for (int i = 0; i < 2; i++) {
+		int id = traverseOrder[i];
+		BBox& child = childBBoxen[id];
+		
+		if (child.testIntersect(ray)) {
+			if (intersectKD(ray, info, id == 0 ? node->left : node->right, child))
+				return true;
+		}
+	}
+	return false;
 }

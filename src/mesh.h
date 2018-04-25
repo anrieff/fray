@@ -27,9 +27,23 @@
 #include "shading.h"
 #include "vector.h"
 #include "triangle.h"
-
+#include "bbox.h"
 
 struct Texture;
+
+
+
+struct KDTreeNode {
+	Axis axis;
+
+	// if it is a binary node:	
+	double splitPos;
+	KDTreeNode* left;
+	KDTreeNode* right;
+	
+	// if it is a leaf node:
+	std::vector<int> triangles;
+};
 
 class Mesh: public Geometry {
 protected:
@@ -38,15 +52,19 @@ protected:
 	std::vector<Vector> uvs;
 	std::vector<Triangle> triangles;
 	
-	Sphere boundingSphere;
+	BBox bbox;
+	KDTreeNode* kdRoot = nullptr;
+	int maxTreeDepth = 0, nodeDepthSum = 0, numNodes = 0;
 
 	void computeBoundingGeometry();
 	void prepareTriangles();
 	bool intersectTriangle(const Ray& ray, const Triangle& T, IntersectionInfo& info);
-
+	void buildKD(KDTreeNode*& node, const std::vector<int>& triangleIndices, BBox bbox, int depth);
+	bool intersectKD(Ray ray, IntersectionInfo& info, KDTreeNode* node, const BBox& bbox);
 public:
 
 	bool faceted = false;
+	bool useKD = true;
 	bool backfaceCulling = true;
 	BumpTexture* bumpMap = nullptr;
 
