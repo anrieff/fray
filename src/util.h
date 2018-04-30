@@ -47,6 +47,8 @@ std::string extensionUpper(const char* fileName); //!< Given a filename, return 
 std::vector<std::string> tokenize(std::string s);
 std::vector<std::string> split(std::string s, char separator);
 
+long long getTicks(); //!< returns the current ticks, measured in ms
+
 /// a simple RAII class for FILE* pointers.
 class FileRAII {
         FILE* held;

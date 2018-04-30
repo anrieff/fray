@@ -23,11 +23,6 @@
  */
 #include <math.h>
 #include <vector>
-#ifndef _WIN32
-#include <SDL/SDL.h>
-#else
-#include <SDL.h>
-#endif // _WIN32
 #include "util.h"
 #include "sdl.h"
 #include "color.h"
@@ -201,7 +196,7 @@ Color raytrace(double x, double y)
 
 void render()
 {
-	unsigned startTicks = SDL_GetTicks();
+	const long long startTicks = getTicks();
 	camera.beginFrame();
 	
 	const double offsets[5][2] = {
@@ -212,7 +207,7 @@ void render()
 		{ 0.6, 0.6 },
 	};
 	int numAASamples = COUNT_OF(offsets);
-	unsigned lastUpdate = startTicks;
+	long long lastUpdate = startTicks;
 	
 	for (int y = 0; y < frameHeight(); y++) {
 		for (int x = 0; x < frameWidth(); x++) {
@@ -225,13 +220,13 @@ void render()
 				vfb[y][x] = avg; // divided by just one, so leave as is
 			}
 		}
-		unsigned currentTime = SDL_GetTicks();
+		const long long currentTime = getTicks();
 		if (currentTime - lastUpdate > 100) {
 			lastUpdate = currentTime;
 			displayVFB(vfb);
 		}
 	}
-	unsigned elapsed = SDL_GetTicks() - startTicks;
+	unsigned elapsed = getTicks() - startTicks;
 	
 	printf("Frame took %d ms\n", elapsed);
 }

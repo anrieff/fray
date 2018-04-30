@@ -216,9 +216,16 @@ inline void orthonormalSystem(const Vector& a, Vector& b, Vector& c)
 inline void randomUnitDiscPoint(double& x, double& y)
 {
 	while (1) {
+#if _WIN32
+		// FIXME: This is fairly inferior to the drand48() distribution, but should suffice, until
+		// the mersene twister RNG support.
+		x = double(rand()) / RAND_MAX;
+		y = double(rand()) / RAND_MAX;
+#else
 		x = drand48();
 		y = drand48();
-		
+#endif
+
 		x = x * 2 - 1;
 		y = y * 2 - 1;
 		
