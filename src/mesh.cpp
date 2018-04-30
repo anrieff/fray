@@ -26,7 +26,12 @@
 #include <string.h>
 #include <algorithm>
 #include <numeric>
+#ifdef _WIN32
+#include <SDL.h>
+#undef main
+#else
 #include <SDL/SDL.h>
+#endif // _WIN32
 #include "mesh.h"
 #include "constants.h"
 #include "color.h"
