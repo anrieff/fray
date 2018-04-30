@@ -29,6 +29,7 @@
 #include "util.h"
 
 #include <string>
+#include <chrono>
 using namespace std;
 
 string upCaseString(string s)
@@ -91,4 +92,11 @@ vector<string> split(string s, char separator)
 		if (j == l - 1) result.push_back("");
 	}
 	return result;
+}
+
+using ClockType = chrono::steady_clock;
+static const chrono::time_point<ClockType> programStart = ClockType::now();
+
+long long getTicks() {
+	return chrono::duration_cast<chrono::milliseconds>(ClockType::now() - programStart).count();
 }

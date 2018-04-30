@@ -26,12 +26,6 @@
 #include <string.h>
 #include <algorithm>
 #include <numeric>
-#ifdef _WIN32
-#include <SDL.h>
-#undef main
-#else
-#include <SDL/SDL.h>
-#endif // _WIN32
 #include "mesh.h"
 #include "constants.h"
 #include "color.h"
@@ -64,10 +58,10 @@ void Mesh::computeBoundingGeometry()
 	for (int i = 0; i < int(triangles.size()); i++)
 		allTriangles.push_back(i);
 	
-	unsigned start = SDL_GetTicks();
+	const long long start = getTicks();
 	kdRoot = new KDTreeNode;
 	buildKD(kdRoot, allTriangles, bbox, 0);
-	unsigned end = SDL_GetTicks();
+	const long long end = getTicks();
 	
 	printf("KD Tree for %d triangles built in %u milliseconds (%d nodes, max depth = %d, avg depth = %.1f)\n", 
 			int(triangles.size()), end - start, numNodes, maxTreeDepth, nodeDepthSum / float(numNodes));
