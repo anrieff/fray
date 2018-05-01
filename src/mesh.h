@@ -38,8 +38,7 @@ struct KDTreeNode {
 
 	// if it is a binary node:	
 	double splitPos;
-	KDTreeNode* left;
-	KDTreeNode* right;
+	KDTreeNode* children; // an array of 2 KDTreeNode items, respectively a left and a right child
 	
 	// if it is a leaf node:
 	std::vector<int> triangles;
@@ -59,8 +58,8 @@ protected:
 	void computeBoundingGeometry();
 	void prepareTriangles();
 	bool intersectTriangle(const Ray& ray, const Triangle& T, IntersectionInfo& info);
-	void buildKD(KDTreeNode*& node, const std::vector<int>& triangleIndices, BBox bbox, int depth);
-	bool intersectKD(Ray ray, IntersectionInfo& info, KDTreeNode* node, const BBox& bbox);
+	void buildKD(KDTreeNode* node, const std::vector<int>& triangleIndices, BBox bbox, int depth);
+	bool intersectKD(Ray ray, IntersectionInfo& info, KDTreeNode& node, const BBox& bbox);
 public:
 
 	bool faceted = false;

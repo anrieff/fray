@@ -64,7 +64,7 @@ void Mesh::computeBoundingGeometry()
 	const long long end = getTicks();
 	
 	printf("KD Tree for %d triangles built in %u milliseconds (%d nodes, max depth = %d, avg depth = %.1f)\n", 
-			int(triangles.size()), end - start, numNodes, maxTreeDepth, nodeDepthSum / float(numNodes));
+			int(triangles.size()), unsigned(end - start), numNodes, maxTreeDepth, nodeDepthSum / float(numNodes));
 }
 
 Mesh::~Mesh()
@@ -128,7 +128,7 @@ bool Mesh::intersect(Ray ray, IntersectionInfo& info)
 	bool found = false;
 	
 	if (useKD && kdRoot) {
-		found = intersectKD(ray, info, kdRoot, bbox);
+		found = intersectKD(ray, info, *kdRoot, bbox);
 	} else {
 		for (auto& T: triangles) {
 			if (intersectTriangle(ray, T, info)) {
@@ -289,14 +289,13 @@ inline double findOptimalSplitPlane(const vector<int>& triangleIndices, BBox bbo
 	return (bbox.vmin[int(axis)] + bbox.vmax[int(axis)]) * 0.5; // <- this could be improved a lot!
 }
 
-void Mesh::buildKD(KDTreeNode*& node, const vector<int>& triangleIndices, BBox bbox, int depth)
+void Mesh::buildKD(KDTreeNode* node, const vector<int>& triangleIndices, BBox bbox, int depth)
 {
 	numNodes++;
 	maxTreeDepth = max(maxTreeDepth, depth);
 	if (int(triangleIndices.size()) <= MAX_TRIANGLES_PER_LEAF || depth > MAX_DEPTH) {
 		// make a leaf node:
 		node->axis = Axis::AXIS_NONE;
-		node->left = node->right = nullptr;
 		
 		node->triangles = triangleIndices;
 		nodeDepthSum += depth;
@@ -323,19 +322,18 @@ void Mesh::buildKD(KDTreeNode*& node, const vector<int>& triangleIndices, BBox b
 			rightTriangles.push_back(ti);
 	}
 	
-	node->left = new KDTreeNode;
-	node->right = new KDTreeNode;
-	buildKD(node->left, leftTriangles, leftbbox, depth + 1);
-	buildKD(node->right, rightTriangles, rightbbox, depth + 1);
+	node->children = new KDTreeNode[2];
+	buildKD(&node->children[0], leftTriangles, leftbbox, depth + 1);
+	buildKD(&node->children[1], rightTriangles, rightbbox, depth + 1);
 	nodeDepthSum += depth;
 }
 
-bool Mesh::intersectKD(Ray ray, IntersectionInfo& info, KDTreeNode* node, const BBox& bbox)
+bool Mesh::intersectKD(Ray ray, IntersectionInfo& info, KDTreeNode& node, const BBox& bbox)
 {
 	// is it leaf?
-	if (node->axis == Axis::AXIS_NONE) {
+	if (node.axis == Axis::AXIS_NONE) {
 		bool found = false;
-		for (int idx: node->triangles) {
+		for (int idx: node.triangles) {
 			Triangle& T = this->triangles[idx];
 			if (intersectTriangle(ray, T, info))
 				found = true;
@@ -347,12 +345,12 @@ bool Mesh::intersectKD(Ray ray, IntersectionInfo& info, KDTreeNode* node, const 
 	// binary node:
 	BBox childBBoxen[2];
 	
-	bbox.split(node->axis, node->splitPos, childBBoxen[0], childBBoxen[1]);
+	bbox.split(node.axis, node.splitPos, childBBoxen[0], childBBoxen[1]);
 	
-	int axis = int(node->axis);
+	int axis = int(node.axis);
 	
 	int traverseOrder[2];
-	if (ray.start[axis] < node->splitPos) {
+	if (ray.start[axis] < node.splitPos) {
 		traverseOrder[0] = 0;
 		traverseOrder[1] = 1;
 	} else {
@@ -362,10 +360,9 @@ bool Mesh::intersectKD(Ray ray, IntersectionInfo& info, KDTreeNode* node, const 
 	
 	for (int i = 0; i < 2; i++) {
 		int id = traverseOrder[i];
-		BBox& child = childBBoxen[id];
 		
-		if (child.testIntersect(ray)) {
-			if (intersectKD(ray, info, id == 0 ? node->left : node->right, child))
+		if (childBBoxen[id].testIntersect(ray)) {
+			if (intersectKD(ray, info, node.children[id], childBBoxen[id]))
 				return true;
 		}
 	}

@@ -63,7 +63,7 @@ Vector lightPos (100, 300, -80);
 Color lightColor(1, 1, 0.9);
 double lightIntensity = 70000;
 Color ambientLightColor = Color(1, 1, 1) * 0.5;
-bool antialiasing = false;
+bool antialiasing = true;
 int sphereIndex;
 int cubeIndex;
 CubemapEnvironment env;
