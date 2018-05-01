@@ -45,6 +45,12 @@ struct KDTreeNode {
 		// if it is a leaf node:
 		std::vector<int>* triangles;
 	};
+	
+	KDTreeNode();
+	~KDTreeNode();
+	void initBinaryNode();
+	void initLeafNode(const std::vector<int>& triangles);
+	inline bool isLeafNode() const { return axis == Axis::AXIS_NONE; }
 };
 
 class Mesh: public Geometry {

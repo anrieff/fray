@@ -35,6 +35,34 @@ using std::vector;
 using std::string;
 
 
+KDTreeNode::KDTreeNode()
+{
+	axis = Axis::AXIS_NONE;
+	splitPos = 0;
+	children = nullptr;
+	triangles = nullptr;
+}
+
+KDTreeNode::~KDTreeNode()
+{
+	if (isLeafNode())
+		delete triangles;
+	else
+		delete[] children;
+}
+
+void KDTreeNode::initBinaryNode()
+{
+	this->children = new KDTreeNode[2];
+}
+
+void KDTreeNode::initLeafNode(const vector<int>& triangles)
+{
+	this->axis = Axis::AXIS_NONE;
+	this->triangles = new vector<int>(triangles);
+}
+
+
 void Mesh::beginRender()
 {
 	computeBoundingGeometry();
@@ -43,12 +71,6 @@ void Mesh::beginRender()
 
 void Mesh::computeBoundingGeometry()
 {
-//	boundingSphere.O.makeZero();
-//	double R = 0;
-//	for (auto& vert: vertices) {
-//		R = max(R, distance(vert, boundingSphere.O));
-//	}
-//	boundingSphere.R = R;
 	bbox.makeEmpty();
 	for (auto& vert: vertices) {
 		bbox.add(vert);
@@ -69,6 +91,8 @@ void Mesh::computeBoundingGeometry()
 
 Mesh::~Mesh()
 {
+	if (kdRoot)
+		delete kdRoot;
 }
 
 bool Mesh::intersectTriangle(const Ray& ray, const Triangle& T, IntersectionInfo& info)
@@ -295,13 +319,12 @@ void Mesh::buildKD(KDTreeNode* node, const vector<int>& triangleIndices, BBox bb
 	maxTreeDepth = max(maxTreeDepth, depth);
 	if (int(triangleIndices.size()) <= MAX_TRIANGLES_PER_LEAF || depth > MAX_DEPTH) {
 		// make a leaf node:
-		node->axis = Axis::AXIS_NONE;
-		
-		node->triangles = new vector<int>(triangleIndices);
+		node->initLeafNode(triangleIndices);
 		nodeDepthSum += depth;
 		return;
 	}
 	
+	node->initBinaryNode();
 	node->axis = Axis(depth % 3);
 	node->splitPos = findOptimalSplitPlane(triangleIndices, bbox, node->axis);
 	
@@ -322,7 +345,6 @@ void Mesh::buildKD(KDTreeNode* node, const vector<int>& triangleIndices, BBox bb
 			rightTriangles.push_back(ti);
 	}
 	
-	node->children = new KDTreeNode[2];
 	buildKD(&node->children[0], leftTriangles, leftbbox, depth + 1);
 	buildKD(&node->children[1], rightTriangles, rightbbox, depth + 1);
 	nodeDepthSum += depth;
@@ -331,7 +353,7 @@ void Mesh::buildKD(KDTreeNode* node, const vector<int>& triangleIndices, BBox bb
 bool Mesh::intersectKD(Ray ray, IntersectionInfo& info, KDTreeNode& node, const BBox& bbox)
 {
 	// is it leaf?
-	if (node.axis == Axis::AXIS_NONE) {
+	if (node.isLeafNode()) {
 		bool found = false;
 		for (int idx: *node.triangles) {
 			Triangle& T = this->triangles[idx];
