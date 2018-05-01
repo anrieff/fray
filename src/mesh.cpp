@@ -297,7 +297,7 @@ void Mesh::buildKD(KDTreeNode* node, const vector<int>& triangleIndices, BBox bb
 		// make a leaf node:
 		node->axis = Axis::AXIS_NONE;
 		
-		node->triangles = triangleIndices;
+		node->triangles = new vector<int>(triangleIndices);
 		nodeDepthSum += depth;
 		return;
 	}
@@ -333,7 +333,7 @@ bool Mesh::intersectKD(Ray ray, IntersectionInfo& info, KDTreeNode& node, const 
 	// is it leaf?
 	if (node.axis == Axis::AXIS_NONE) {
 		bool found = false;
-		for (int idx: node.triangles) {
+		for (int idx: *node.triangles) {
 			Triangle& T = this->triangles[idx];
 			if (intersectTriangle(ray, T, info))
 				found = true;
@@ -358,11 +358,9 @@ bool Mesh::intersectKD(Ray ray, IntersectionInfo& info, KDTreeNode& node, const 
 		traverseOrder[1] = 0;
 	}
 	
-	for (int i = 0; i < 2; i++) {
-		int id = traverseOrder[i];
-		
-		if (childBBoxen[id].testIntersect(ray)) {
-			if (intersectKD(ray, info, node.children[id], childBBoxen[id]))
+	for (int childId: traverseOrder) {		
+		if (childBBoxen[childId].testIntersect(ray)) {
+			if (intersectKD(ray, info, node.children[childId], childBBoxen[childId]))
 				return true;
 		}
 	}

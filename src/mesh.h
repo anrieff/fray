@@ -36,12 +36,15 @@ struct Texture;
 struct KDTreeNode {
 	Axis axis;
 
-	// if it is a binary node:	
-	double splitPos;
-	KDTreeNode* children; // an array of 2 KDTreeNode items, respectively a left and a right child
-	
-	// if it is a leaf node:
-	std::vector<int> triangles;
+	union {
+		struct {
+			// if it is a binary node:	
+			double splitPos;
+			KDTreeNode* children; // an array of 2 KDTreeNode items, respectively a left and a right child
+		};
+		// if it is a leaf node:
+		std::vector<int>* triangles;
+	};
 };
 
 class Mesh: public Geometry {
