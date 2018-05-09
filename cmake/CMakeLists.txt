@@ -17,15 +17,20 @@ set (HEADERS
 	../src/bitmap.h
 	../src/camera.h
 	../src/color.h
-	../src/environment.h
 	../src/constants.h
+	../src/cxxptl-sdl.h
+	../src/environment.h
 	../src/geometry.h
+	../src/heightfield.h
+	../src/lights.h
 	../src/main.h
-	../src/mesh.h
 	../src/matrix.h
+	../src/mesh.h
+	../src/random_generator.h
+	../src/scene.h
 	../src/sdl.h
-	../src/triangle.h
 	../src/shading.h
+	../src/triangle.h
 	../src/util.h
 	../src/vector.h
 )
@@ -33,11 +38,16 @@ set (HEADERS
 set (SOURCES
 	../src/bitmap.cpp
 	../src/camera.cpp
+	../src/cxxptl-sdl.cpp
 	../src/environment.cpp
 	../src/geometry.cpp
+	../src/heightfield.cpp
+	../src/lights.cpp
 	../src/main.cpp
 	../src/matrix.cpp
 	../src/mesh.cpp
+	../src/random_generator.cpp
+	../src/scene.cpp
 	../src/sdl.cpp
 	../src/shading.cpp
 	../src/triangle.cpp
