@@ -190,3 +190,17 @@ bool CsgOp::intersect(Ray ray, IntersectionInfo& info)
 	
 	return false;
 }
+
+bool Node::intersect(Ray ray, IntersectionInfo& info)
+{
+	Ray localRay = ray;
+	localRay.start = T.untransformPoint(ray.start);
+	localRay.dir = T.untransformDir(ray.dir);
+	
+	if (!geometry->intersect(localRay, info)) return false;
+	
+	info.ip = T.transformPoint(info.ip);
+	info.norm = T.transformDir(info.norm);
+	info.dist = distance(ray.start, info.ip);
+	return true;
+}

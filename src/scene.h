@@ -22,3 +22,16 @@
  * @Brief Scene file parsing, loading and infrastructure
  */
 #pragma once
+
+#include "vector.h"
+#include "geometry.h"
+#include "camera.h"
+#include "environment.h"
+#include <vector>
+
+extern Camera camera;
+extern std::vector<Node> nodes;
+extern CubemapEnvironment env;
+
+void setupScene_Forest();
+void setupScene_DOF();

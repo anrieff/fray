@@ -27,16 +27,21 @@
 
 class Camera {
 	Vector topLeft, topRight, bottomLeft;
+	Vector frontDir, upDir, rightDir;
 	double w, h;
+	double apertureSize;
 public:
 	
 	Vector pos = Vector(0, 0, 0);
 	double yaw = 0, pitch = 0, roll = 0;
 	double fov = 90.0;
 	double aspectRatio = 1.3333;
+	double focalPlaneDist = 5.0;
+	double fNumber;
 	
 	void beginFrame();
 	
 	Ray getScreenRay(double x, double y);
+	Ray getDOFRay(double x, double y);
 	
 };

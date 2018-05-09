@@ -31,119 +31,19 @@
 #include "camera.h"
 #include "geometry.h"
 #include "mesh.h"
+#include "scene.h"
+#include "lights.h"
 #include "shading.h"
 #include "environment.h"
 using namespace std;
 
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE];
 
-struct Node: public Intersectable {
-	Geometry* geometry;
-	Shader* shader;
-	Transform T;
-	
-	bool intersect(Ray ray, IntersectionInfo& info)
-	{
-		Ray localRay = ray;
-		localRay.start = T.untransformPoint(ray.start);
-		localRay.dir = T.untransformDir(ray.dir);
-		
-		if (!geometry->intersect(localRay, info)) return false;
-		
-		info.ip = T.transformPoint(info.ip);
-		info.norm = T.transformDir(info.norm);
-		info.dist = distance(ray.start, info.ip);
-		return true;
-	}
-};
-
-Camera camera;
-vector<Node> nodes;
-Vector lightPos (100, 300, -80);
-Color lightColor(1, 1, 0.9);
-double lightIntensity = 70000;
-Color ambientLightColor = Color(1, 1, 1) * 0.5;
+Color ambientLightColor = Color(1, 1, 1) * 0.0;
 bool antialiasing = true;
+int numDOFsamples = 20;
 int sphereIndex;
 int cubeIndex;
-CubemapEnvironment env;
-
-void setupScene()
-{
-	Node plane;
-	
-	env.loadMaps("data/env/forest");
-	
-	//CheckerTexture* checkerBW = new CheckerTexture();
-	BitmapTexture* floorTiles = new BitmapTexture("data/floor.bmp");
-	floorTiles->scaling = 1/100.0;
-	//BitmapTexture* world = new BitmapTexture("data/world.bmp");
-	CheckerTexture* checkerColor = new CheckerTexture(Color(1, 0.5, 0.5), Color(0.5, 1.0, 1.0));
-	CheckerTexture* checkerCube = new CheckerTexture(Color(1, 1, 1), Color(0.5, 0.5, 0.5));
-	checkerCube->scaling = 6;
-
-	plane.geometry = new Plane(80);
-	
-	Layered* planeShader = new Layered;
-	
-	planeShader->addLayer(new Lambert(floorTiles), Color(1, 1, 1));
-	planeShader->addLayer(new Reflection(1), Color(1, 1, 1) * 0.1);
-	
-	plane.shader = planeShader;
-	nodes.push_back(plane);
-	
-	Mesh* heartGeom = new Mesh;
-	Node heartNode;
-	Phong* cubeTex = new Phong(new BitmapTexture("data/texture/zar-texture.bmp"));
-	heartGeom->loadFromOBJ("data/geom/truncated_cube.obj");
-	heartGeom->bumpMap = new BumpTexture("data/texture/zar-bump.bmp");
-	heartGeom->bumpMap->bumpIntensity = 10;
-	heartGeom->faceted = true;
-	heartGeom->beginRender();
-	heartNode.geometry = heartGeom;
-	Phong* phong = new Phong(checkerCube);
-	phong->exponent = 20;
-	phong->specularMultiplier = 0.7;
-	heartNode.T.scale(5);
-	heartNode.T.rotate(90, 0, 0);
-	heartNode.T.translate(Vector(-10, 20, 0));
-
-	Mesh* teapot = new Mesh;
-	teapot->loadFromOBJ("data/geom/teapot_hires.obj");
-	teapot->beginRender();
-	teapot->useKD = true;
-	Node teapotNode;
-	teapotNode.geometry = teapot;
-	teapotNode.shader = new Lambert(checkerCube);
-	teapotNode.T.scale(20);
-	teapotNode.T.rotate(90, 0, 0);
-	teapotNode.T.translate(Vector(60, 0, -30));
-	nodes.push_back(teapotNode);
-	
-	// create a glassy shader by using a:
-	// layer 0 (bottom): refraction shader, ior = 1.6, opacity = 1
-	// layer 1 (top): reflection shader, multiplier 0.95, opacity = fresnel texture with ior = 1.6
-	double GLASS_IOR = 1.6;
-	Layered* glassShader = new Layered;
-	glassShader->addLayer(new Refraction(GLASS_IOR));
-	glassShader->addLayer(new Reflection(0.95), Color(1, 1, 1), new FresnelTexture(GLASS_IOR));
-	
-	heartNode.shader = cubeTex;
-	sphereIndex = int(nodes.size());
-	nodes.push_back(heartNode);
-	
-	Node cube;
-	cube.geometry = new Cube(Vector(0, 0, 0), 15);
-	cube.T.rotate(toRadians(30), 0, toRadians(60));
-	cube.T.translate(Vector(+40, 16, 30));
-	cube.shader = new Lambert(checkerColor);
-	cubeIndex = int(nodes.size());
-	nodes.push_back(cube);
-	
-	camera.pos = Vector(0, 60, -120);
-	camera.yaw = toRadians(-10);
-	camera.pitch = toRadians(-15);
-}
 
 bool visible(const Vector& a, const Vector& b)
 {
@@ -208,17 +108,24 @@ void render()
 	};
 	int numAASamples = COUNT_OF(offsets);
 	long long lastUpdate = startTicks;
+	int pixelSamples = 1;
+	if (antialiasing) pixelSamples = numAASamples;
+	if (numDOFsamples > 0)
+		pixelSamples = numDOFsamples;
 	
 	for (int y = 0; y < frameHeight(); y++) {
 		for (int x = 0; x < frameWidth(); x++) {
-			Color avg = raytrace(x + offsets[0][0], y + offsets[0][1]);
-			if (antialiasing) {
-				for (int i = 1; i < numAASamples; i++)
-					avg += raytrace(x + offsets[i][0], y + offsets[i][1]);
-				vfb[y][x] = avg / numAASamples;
-			} else {
-				vfb[y][x] = avg; // divided by just one, so leave as is
+			Color avg(0, 0, 0);
+			for (int i = 0; i < pixelSamples; i++) {
+				Ray ray;
+				if (numDOFsamples > 0) {
+					ray = camera.getDOFRay(x + randomFloat(), y + randomFloat());
+				} else {
+					ray = camera.getScreenRay(x + offsets[i][0], y + offsets[i][1]);
+				}
+				avg += raytrace(ray);
 			}
+			vfb[y][x] = avg / pixelSamples;
 		}
 		const long long currentTime = getTicks();
 		if (currentTime - lastUpdate > 100) {
@@ -234,7 +141,7 @@ void render()
 int main(int argc, char** argv)
 {
 	initGraphics(RESX, RESY);
-	setupScene();
+	setupScene_DOF();
 	camera.beginFrame();
 	render();
 	displayVFB(vfb);

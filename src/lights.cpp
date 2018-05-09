@@ -21,3 +21,57 @@
  * @File lights.cpp
  * @Brief Describes light sources
  */
+#include "lights.h"
+
+std::vector<Light*> lights;
+
+PointLight::PointLight(Color color, float power, Vector pos)
+{
+	this->color = color;
+	this->power = power;
+	this->pos = pos;
+}
+
+void PointLight::getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color)
+{
+	samplePos = this->pos;
+	color = this->color * this->power;
+}
+
+
+RectLight::RectLight(Color color, float power, Transform T, int xSubd, int ySubd)
+{
+	this->color = color;
+	this->power = power;
+	this->T = T;
+	this->xSubd = xSubd;
+	this->ySubd = ySubd;
+}
+
+void RectLight::getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color)
+{
+	int column = sampleIdx % xSubd;
+	int row = sampleIdx / xSubd;
+	
+	double areaXsize = 1.0 / xSubd;
+	double areaYsize = 1.0 / ySubd;
+	
+	double areaXstart = column * areaXsize;
+	double areaYstart = row * areaYsize;
+	
+	double p_x = areaXstart + areaXsize * randomFloat();
+	double p_y = areaYstart + areaYsize * randomFloat();
+	
+	// check if shaded point is behind the lamp:
+	Vector shadedPointInLightSpace = T.untransformPoint(shadePos);
+	if (shadedPointInLightSpace.y > 0) {
+		samplePos.makeZero();
+		color.makeZero();
+		return;
+	}
+	
+	Vector pointOnLight(p_x - 0.5, 0, p_y - 0.5); // ([-0.5..0.5], 0, [-0.5..0.5])
+	
+	samplePos = T.transformPoint(pointOnLight);
+	color = this->color * this->power;
+}

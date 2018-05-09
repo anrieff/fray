@@ -22,3 +22,41 @@
  * @Brief Describes light sources
  */
 #pragma once
+#include "color.h"
+#include "vector.h"
+#include "matrix.h"
+
+class Light {
+protected:
+	Color color;
+	float power;
+public:
+	virtual ~Light() {}
+	
+	virtual int getNumSamples() = 0;
+	
+	virtual void getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color) = 0;
+};
+
+
+class PointLight: public Light {
+	Vector pos;
+public:
+	PointLight(Color color, float power, Vector pos);
+	int getNumSamples() { return 1; }
+	
+	void getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color) override;
+};
+
+class RectLight: public Light {
+	Transform T;
+	int xSubd, ySubd;
+public:
+	RectLight(Color color, float power, Transform T, int xSubd = 3, int ySubd = 3);
+
+	int getNumSamples() { return xSubd * ySubd; }
+	
+	void getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color) override;
+};
+
+extern std::vector<Light*> lights;

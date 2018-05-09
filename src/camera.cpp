@@ -45,6 +45,10 @@ void Camera::beginFrame()
 	topLeft *= rotation;
 	topRight *= rotation;
 	bottomLeft *= rotation;
+	frontDir = Vector(0, 0, 1) * rotation;
+	upDir = Vector(0, 1, 0) * rotation;
+	rightDir = Vector(1, 0, 0) * rotation;
+	apertureSize = 1.0 / fNumber;
 }
 
 Ray Camera::getScreenRay(double x, double y)
@@ -55,4 +59,22 @@ Ray Camera::getScreenRay(double x, double y)
 	result.dir.normalize();
 	result.start = this->pos;
 	return result;
+}
+
+Ray Camera::getDOFRay(double x, double y)
+{
+	Ray ray = getScreenRay(x, y);
+	Vector screenRayDir = ray.dir;
+	double M = focalPlaneDist / dot(frontDir, screenRayDir);
+	Vector T = this->pos + screenRayDir * M;
+	
+	double u, v;
+	randomUnitDiscPoint(u, v);
+	u *= apertureSize;
+	v *= apertureSize;
+	ray.start += u * rightDir + v * upDir;
+	ray.dir = T - ray.start;
+	ray.dir.normalize();
+	
+	return ray;
 }

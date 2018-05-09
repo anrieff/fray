@@ -24,12 +24,10 @@
 
 #include "shading.h"
 #include "main.h"
+#include "lights.h"
 #include <algorithm>
 using namespace std;
 
-extern Vector lightPos;
-extern Color lightColor;
-extern double lightIntensity;
 extern Color ambientLightColor;
 
 
@@ -48,29 +46,40 @@ Color CheckerTexture::sample(Ray ray, const IntersectionInfo& info)
 
 Color Lambert::shade(Ray ray, const IntersectionInfo& info)
 {
+	Color shadeResult(0, 0, 0);
 	Color diffuseColor = diffuseTex->sample(ray, info);
-	
-	double lightDistSqr = (info.ip - lightPos).lengthSqr();
-	Vector toLight = (lightPos - info.ip);
-	toLight.normalize();
-	
-	Vector n = faceforward(ray.dir, info.norm);
-	
-	double cosAngle = dot(toLight, n);
-	double lightMultiplier = lightIntensity * cosAngle / lightDistSqr;
-	
-	lightMultiplier = max(0.0, lightMultiplier);
-	
-	Color result = diffuseColor * ambientLightColor;
-	
-	if (visible(info.ip + n * 1e-6, lightPos))
-		result += diffuseColor * lightColor * lightMultiplier;
-	
-	return result;
+	for (auto light: lights) {
+		
+		int numLightSamples = 0;
+		Color sum(0, 0, 0);
+		numLightSamples = light->getNumSamples();
+		
+		for (int sampleIdx = 0; sampleIdx < numLightSamples; sampleIdx++) {
+			Color lightColor;
+			Vector lightPos;
+			light->getNthSample(sampleIdx, info.ip, lightPos, lightColor);
+			double lightDistSqr = (info.ip - lightPos).lengthSqr();
+			Vector toLight = (lightPos - info.ip);
+			toLight.normalize();
+			
+			Vector n = faceforward(ray.dir, info.norm);
+			
+			double cosAngle = dot(toLight, n);
+			double lambertTerm = cosAngle / lightDistSqr;
+			
+			lambertTerm = max(0.0, lambertTerm);
+			
+			if (visible(info.ip + n * 1e-6, lightPos))
+				sum += diffuseColor * lightColor * lambertTerm;
+		}
+		shadeResult += sum / numLightSamples;
+	}
+	return shadeResult + diffuseColor * ambientLightColor;
 }
 
 Color Phong::shade(Ray ray, const IntersectionInfo& info)
 {
+	/*
 	Color diffuseColor = diffuseTex->sample(ray, info);
 	
 	double lightDistSqr = (info.ip - lightPos).lengthSqr();
@@ -97,6 +106,8 @@ Color Phong::shade(Ray ray, const IntersectionInfo& info)
 	}
 	
 	return result;
+	*/
+	return Color(1, 0, 0);
 }
 
 

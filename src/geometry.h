@@ -25,6 +25,7 @@
 
 #include "vector.h"
 #include <functional>
+#include "matrix.h"
 
 class Geometry;
 struct IntersectionInfo {
@@ -124,4 +125,11 @@ public:
 	}
 };
 
+struct Shader;
+struct Node: public Intersectable {
+	Geometry* geometry;
+	Shader* shader;
+	Transform T;
+	bool intersect(Ray ray, IntersectionInfo& info) override;
+};
 
