@@ -15,6 +15,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include=".\src\bbox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include=".\src\bitmap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -27,7 +30,19 @@
     <ClInclude Include=".\src\constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include=".\src\cxxptl-sdl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\src\environment.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include=".\src\geometry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\src\heightfield.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\src\lights.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include=".\src\main.h">
@@ -36,28 +51,28 @@
     <ClInclude Include=".\src\matrix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include=".\src\mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\src\random_generator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\src\scene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include=".\src\sdl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include=".\src\shading.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include=".\src\triangle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include=".\src\util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include=".\src\vector.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include=".\src\bbox.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include=".\src\environment.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include=".\src\mesh.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include=".\src\triangle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -68,7 +83,19 @@
     <ClCompile Include=".\src\camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include=".\src\cxxptl-sdl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\environment.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include=".\src\geometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\heightfield.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\lights.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include=".\src\main.cpp">
@@ -77,16 +104,19 @@
     <ClCompile Include=".\src\matrix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include=".\src\mesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\random_generator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\src\scene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include=".\src\sdl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include=".\src\shading.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include=".\src\environment.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include=".\src\mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include=".\src\triangle.cpp">
