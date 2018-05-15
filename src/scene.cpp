@@ -44,8 +44,14 @@ Color ambientLightColor;
 bool antialiasing;
 int numDOFsamples;
 
+void setupSceneCommon()
+{
+	camera.aspectRatio = RESX / double(RESY);
+}
+
 void setupScene_Forest()
 {
+	setupSceneCommon();
 	ambientLightColor = Color(1, 1, 0.9) * 0.5;
 	antialiasing = true;
 	
@@ -54,7 +60,7 @@ void setupScene_Forest()
 	Transform lightT;
 	lightT.scale(150);
 	lightT.translate(Vector(100, 300, -80));
-	Light* defaultLight = new RectLight(Color(1, 1, 0.9), 150000, lightT, 3, 3);
+	Light* defaultLight = new RectLight(Color(1, 1, 0.9), 70000, lightT, 3, 3);
 	lights.push_back(defaultLight);
 	
 	env.loadMaps("data/env/forest");
@@ -88,7 +94,7 @@ void setupScene_Forest()
 	heartNode.geometry = heartGeom;
 	Phong* phong = new Phong(checkerCube);
 	phong->exponent = 20;
-	phong->specularMultiplier = 0.7;
+	phong->specularMultiplier = 7;
 	heartNode.T.scale(5);
 	heartNode.T.rotate(90, 0, 0);
 	heartNode.T.translate(Vector(-10, 20, 0));
@@ -132,6 +138,7 @@ void setupScene_Forest()
 
 void setupScene_DOF()
 {
+	setupSceneCommon();
 	numDOFsamples = 20;
 	Light* defaultLight = new PointLight(Color(1, 1, 0.9), 100000, Vector(200, 200, -200));
 	lights.push_back(defaultLight);
@@ -142,7 +149,6 @@ void setupScene_DOF()
 	camera.pitch = toRadians(-41.8);
 	camera.roll = toRadians(2.3);
 	camera.fov = 38;
-	camera.aspectRatio = 1.5;
 	camera.focalPlaneDist = 25.29;
 	camera.fNumber = 1.4;  // f/2
 	

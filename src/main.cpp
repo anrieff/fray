@@ -135,7 +135,7 @@ void render()
 int main(int argc, char** argv)
 {
 	initGraphics(RESX, RESY);
-	setupScene_DOF();
+	setupScene_Forest();
 	camera.beginFrame();
 	render();
 	displayVFB(vfb);

@@ -46,10 +46,10 @@ Color CheckerTexture::sample(Ray ray, const IntersectionInfo& info)
 
 Color Lambert::shade(Ray ray, const IntersectionInfo& info)
 {
-	Color shadeResult(0, 0, 0);
 	Color diffuseColor = diffuseTex->sample(ray, info);
+	Color shadeResult = diffuseColor * ambientLightColor;
+	
 	for (auto light: lights) {
-		
 		int numLightSamples = 0;
 		Color sum(0, 0, 0);
 		numLightSamples = light->getNumSamples();
@@ -64,50 +64,61 @@ Color Lambert::shade(Ray ray, const IntersectionInfo& info)
 			
 			Vector n = faceforward(ray.dir, info.norm);
 			
-			double cosAngle = dot(toLight, n);
-			double lambertTerm = cosAngle / lightDistSqr;
+			float cosAngle = dot(toLight, n);
+			float lambertTerm = cosAngle / lightDistSqr;
 			
-			lambertTerm = max(0.0, lambertTerm);
+			lambertTerm = max(0.0f, lambertTerm);
 			
 			if (visible(info.ip + n * 1e-6, lightPos))
 				sum += diffuseColor * lightColor * lambertTerm;
 		}
 		shadeResult += sum / numLightSamples;
 	}
-	return shadeResult + diffuseColor * ambientLightColor;
+	return shadeResult;
 }
 
 Color Phong::shade(Ray ray, const IntersectionInfo& info)
 {
-	/*
 	Color diffuseColor = diffuseTex->sample(ray, info);
-	
-	double lightDistSqr = (info.ip - lightPos).lengthSqr();
-	Vector toLight = (lightPos - info.ip);
-	toLight.normalize();
-	
-	Vector n = faceforward(ray.dir, info.norm);
-	
-	double cosAngle = max(0.0, dot(toLight, n));
-	double lightMultiplier = lightIntensity * cosAngle / lightDistSqr;
-	
-	Color result = diffuseColor * ambientLightColor;
-	
-	if (visible(info.ip + n * 1e-6, lightPos)) {
-		result += diffuseColor * lightColor * lightMultiplier;
+	Color shadeResult = diffuseColor * ambientLightColor;
+
+	for (auto light: lights) {	
+		int numLightSamples = 0;
+		Color sum(0, 0, 0);
+		numLightSamples = light->getNumSamples();
 		
-		Vector fromLight = -toLight;
-		Vector r = reflect(fromLight, n);
-		double cosCameraReflection = dot(-ray.dir, r);
-		if (cosCameraReflection > 0)
-			result += lightColor * specularColor
-			          * pow(cosCameraReflection, exponent)
-			          * specularMultiplier;
+		for (int sampleIdx = 0; sampleIdx < numLightSamples; sampleIdx++) {
+			Color lightColor;
+			Vector lightPos;
+			light->getNthSample(sampleIdx, info.ip, lightPos, lightColor);
+			double lightDistSqr = (info.ip - lightPos).lengthSqr();
+			Vector toLight = (lightPos - info.ip);
+			toLight.normalize();
+			
+			Vector n = faceforward(ray.dir, info.norm);
+			
+			float cosAngle = dot(toLight, n);
+			float lambertTerm = cosAngle / lightDistSqr;
+			
+			lambertTerm = max(0.0f, lambertTerm);
+			
+			if (visible(info.ip + n * 1e-6, lightPos)) {
+				Color result = diffuseColor * lightColor * lambertTerm;
+				
+				Vector fromLight = -toLight;
+				Vector r = reflect(fromLight, n);
+				double cosCameraReflection = dot(-ray.dir, r);
+				if (cosCameraReflection > 0) {
+					result += lightColor / lightDistSqr * specularColor
+							  * pow(cosCameraReflection, exponent)
+							  * specularMultiplier;
+				}
+				sum += result;
+			}
+		}
+		shadeResult += sum / numLightSamples;
 	}
-	
-	return result;
-	*/
-	return Color(1, 0, 0);
+	return shadeResult;
 }
 
 
