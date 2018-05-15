@@ -32,6 +32,9 @@
 extern Camera camera;
 extern std::vector<Node> nodes;
 extern CubemapEnvironment env;
+extern Color ambientLightColor;
+extern bool antialiasing;
+extern int numDOFsamples;
 
 void setupScene_Forest();
 void setupScene_DOF();

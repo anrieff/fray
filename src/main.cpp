@@ -39,12 +39,6 @@ using namespace std;
 
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE];
 
-Color ambientLightColor = Color(1, 1, 1) * 0.0;
-bool antialiasing = true;
-int numDOFsamples = 20;
-int sphereIndex;
-int cubeIndex;
-
 bool visible(const Vector& a, const Vector& b)
 {
 	Ray ray;

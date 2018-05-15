@@ -24,8 +24,10 @@
 #pragma once
 
 #define VFB_MAX_SIZE 1920
-#define RESX 903
-#define RESY 602
+//#define RESX 903
+//#define RESY 602
+#define RESX 800
+#define RESY 600
 #define PI 3.141592653589793238
 #define INF 1e99
 

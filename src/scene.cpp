@@ -30,6 +30,7 @@
 #include "camera.h"
 #include "geometry.h"
 #include "mesh.h"
+#include "main.h"
 #include "scene.h"
 #include "lights.h"
 #include "shading.h"
@@ -39,10 +40,15 @@ using namespace std;
 Camera camera;
 vector<Node> nodes;
 CubemapEnvironment env;
+Color ambientLightColor;
+bool antialiasing;
+int numDOFsamples;
 
-
- void setupScene_Forest()
+void setupScene_Forest()
 {
+	ambientLightColor = Color(1, 1, 0.9) * 0.5;
+	antialiasing = true;
+	
 	Node plane;
 	
 	Transform lightT;
@@ -126,6 +132,7 @@ CubemapEnvironment env;
 
 void setupScene_DOF()
 {
+	numDOFsamples = 20;
 	Light* defaultLight = new PointLight(Color(1, 1, 0.9), 100000, Vector(200, 200, -200));
 	lights.push_back(defaultLight);
 	
@@ -136,14 +143,8 @@ void setupScene_DOF()
 	camera.roll = toRadians(2.3);
 	camera.fov = 38;
 	camera.aspectRatio = 1.5;
-	/*
-		dof           on
-	focalPlaneDist 25.29
-	fNumber       2.0     # This is also not quite correct, the actual aperture was f/2.0
-	numSamples      100
-	*/
-	camera.focalPlaneDist = 29.29;
-	camera.fNumber = 2;  // f/2
+	camera.focalPlaneDist = 25.29;
+	camera.fNumber = 1.4;  // f/2
 	
 	Mesh* leaf = new Mesh;
 	leaf->loadFromOBJ("data/geom/leaf.obj");
