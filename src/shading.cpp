@@ -25,10 +25,9 @@
 #include "shading.h"
 #include "main.h"
 #include "lights.h"
+#include <string.h>
 #include <algorithm>
 using namespace std;
-
-extern Color ambientLightColor;
 
 
 Color ConstantShader::shade(Ray ray, const IntersectionInfo& info)
@@ -46,10 +45,11 @@ Color CheckerTexture::sample(Ray ray, const IntersectionInfo& info)
 
 Color Lambert::shade(Ray ray, const IntersectionInfo& info)
 {
-	Color diffuseColor = diffuseTex->sample(ray, info);
-	Color shadeResult = diffuseColor * ambientLightColor;
+	Color diffuseColor = color;
+	if (diffuseTex) diffuseColor *= diffuseTex->sample(ray, info);
+	Color shadeResult = diffuseColor * scene.settings.ambientLight;
 	
-	for (auto light: lights) {
+	for (auto light: scene.lights) {
 		int numLightSamples = 0;
 		Color sum(0, 0, 0);
 		numLightSamples = light->getNumSamples();
@@ -79,10 +79,11 @@ Color Lambert::shade(Ray ray, const IntersectionInfo& info)
 
 Color Phong::shade(Ray ray, const IntersectionInfo& info)
 {
-	Color diffuseColor = diffuseTex->sample(ray, info);
-	Color shadeResult = diffuseColor * ambientLightColor;
+	Color diffuseColor = color;
+	if (diffuseTex) diffuseColor *= diffuseTex->sample(ray, info);
+	Color shadeResult = diffuseColor * scene.settings.ambientLight;
 
-	for (auto light: lights) {	
+	for (auto light: scene.lights) {	
 		int numLightSamples = 0;
 		Color sum(0, 0, 0);
 		numLightSamples = light->getNumSamples();
@@ -122,11 +123,6 @@ Color Phong::shade(Ray ray, const IntersectionInfo& info)
 }
 
 
-BitmapTexture::BitmapTexture(const char* filename)
-{
-	bmp.loadImage(filename);
-}
-
 Color BitmapTexture::sample(Ray ray, const IntersectionInfo& info)
 {
 	int int_x = int(floor(info.u * scaling * bmp.getWidth()));
@@ -138,13 +134,6 @@ Color BitmapTexture::sample(Ray ray, const IntersectionInfo& info)
 	if (int_y < 0) int_y += bmp.getHeight();
 	
 	return bmp.getPixel(int_x, int_y);
-}
-
-Reflection::Reflection(float multiplier, double glossiness, int glossinessSamples): mult(multiplier, multiplier, multiplier)
-{
-	pureReflection = (glossiness == 1.0);
-	deflectionScaling = pow(10.0, 2 - 4*glossiness);
-	numSamples = glossinessSamples;
 }
 
 Color Reflection::shade(Ray ray, const IntersectionInfo& info)
@@ -239,6 +228,50 @@ void Layered::addLayer(Shader* shader, Color opacity, Texture* texture)
 	}
 }
 
+void Layered::fillProperties(ParsedBlock& pb)
+{
+	char name[128];
+	char value[256];
+	int srcLine;
+	for (int i = 0; i < pb.getBlockLines(); i++) {
+		// fetch and parse all lines like "layer <shader>, <color>[, <texture>]"
+		pb.getBlockLine(i, srcLine, name, value);
+		if (!strcmp(name, "layer")) {
+			char shaderName[200];
+			char textureName[200] = "";
+			bool err = false;
+			if (!getFrontToken(value, shaderName)) {
+				err = true;
+			} else {
+				stripPunctuation(shaderName);
+			}
+			if (!strlen(value)) err = true;
+			if (!err && value[strlen(value) - 1] != ')') {
+				if (!getLastToken(value, textureName)) {
+					err = true;
+				} else {
+					stripPunctuation(textureName);
+				}
+			}
+			if (!err && !strcmp(textureName, "NULL")) strcpy(textureName, "");
+			Shader* shader = NULL;
+			Texture* texture = NULL;
+			if (!err) {
+				shader = pb.getParser().findShaderByName(shaderName);
+				err = (shader == NULL);
+			}
+			if (!err && strlen(textureName)) {
+				texture = pb.getParser().findTextureByName(textureName);
+				err = (texture == NULL);
+			}
+			if (err) throw SyntaxError(srcLine, "Expected a line like `layer <shader>, <color>[, <texture>]'");
+			double x, y, z;
+			get3Doubles(srcLine, value, x, y, z);
+			addLayer(shader, Color((float) x, (float) y, (float) z), texture);
+		}
+	}
+}
+
 Color Layered::shade(Ray ray, const IntersectionInfo& info)
 {
 	Color result(0, 0, 0);
@@ -269,23 +302,14 @@ Color FresnelTexture::sample(Ray ray, const IntersectionInfo& info)
 	return Color(f, f, f);
 }
 
-BumpTexture::BumpTexture(const char* filename)
+void BumpTexture::beginRender()
 {
-	Bitmap sourceTex;
-	sourceTex.loadImage(filename);
-	
-	bumpTex.generateEmptyImage(sourceTex.getWidth(), sourceTex.getHeight());
-	
-	for (int y = 0; y < sourceTex.getHeight(); y++)
-		for (int x = 0; x < sourceTex.getWidth(); x++) {
-			int right = min(sourceTex.getWidth() - 1, x + 1);
-			int bottom = min(sourceTex.getHeight() - 1, y + 1);
-			float dx =   sourceTex.getPixel(x, y).intensity()
-			           - sourceTex.getPixel(right, y).intensity();
-			float dy =   sourceTex.getPixel(x, y).intensity()
-			           - sourceTex.getPixel(x, bottom).intensity();
-			bumpTex.setPixel(x, y, Color(dx, dy, 0));
-		}
+	bumpTex.differentiate();
+}
+
+Color BumpTexture::sample(Ray ray, const IntersectionInfo& info)
+{
+	return Color(0, 0, 0);
 }
 
 void BumpTexture::getDeflection(const IntersectionInfo& info, float& dx, float& dy)
@@ -301,4 +325,12 @@ void BumpTexture::getDeflection(const IntersectionInfo& info, float& dx, float& 
 	Color t = bumpTex.getPixel(int_x, int_y);
 	dx = t.r * bumpIntensity;
 	dy = t.g * bumpIntensity;
+}
+
+void BumpTexture::modifyNormal(IntersectionInfo& info)
+{
+	float dx, dy;
+	getDeflection(info, dx, dy);
+	info.norm += (dx * info.dNdx + dy * info.dNdy) * bumpIntensity;
+	info.norm.normalize();
 }

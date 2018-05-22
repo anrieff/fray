@@ -31,8 +31,6 @@
 
 struct Texture;
 
-
-
 struct KDTreeNode {
 	Axis axis;
 
@@ -74,13 +72,28 @@ public:
 	bool faceted = false;
 	bool useKD = true;
 	bool backfaceCulling = true;
-	BumpTexture* bumpMap = nullptr;
 
 	~Mesh();
+	
+	void fillProperties(ParsedBlock& pb)
+	{
+		char fn[256];
+		if (pb.getFilenameProp("file", fn)) {
+			if (!loadFromOBJ(fn)) {
+				pb.signalError("Could not parse OBJ file!");
+			}
+		} else {
+			pb.requiredProp("file");
+		}
+		pb.getBoolProp("faceted", &faceted);
+		pb.getBoolProp("backfaceCulling", &backfaceCulling);
+		pb.getBoolProp("useKDTree", &useKD);
+	}
+
 
 	bool loadFromOBJ(const char* filename);
 
-	void beginRender();
+	void beginRender() override;
 
 	bool intersect(Ray ray, IntersectionInfo& info) override;
 };

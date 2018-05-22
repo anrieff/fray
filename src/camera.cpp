@@ -41,7 +41,8 @@ void Camera::beginFrame()
 	w = frameWidth();
 	h = frameHeight();
 	
-	Matrix rotation = rotationAroundZ(roll) * rotationAroundX(pitch) * rotationAroundY(yaw);
+	Matrix rotation = rotationAroundZ(toRadians(roll)) * rotationAroundX(toRadians(pitch)) *
+	                  rotationAroundY(toRadians(yaw));
 	topLeft *= rotation;
 	topRight *= rotation;
 	bottomLeft *= rotation;

@@ -25,25 +25,47 @@
 #include "color.h"
 #include "vector.h"
 #include "matrix.h"
+#include "scene.h"
+#include "geometry.h"
 
-class Light {
+class Light: public SceneElement, public Intersectable {
 protected:
-	Color color;
-	float power;
+	Color color = Color(1, 1, 1);
+	float power = 1;
 public:
 	virtual ~Light() {}
 	
+	ElementType getElementType() const { return ELEM_LIGHT; }
+
 	virtual int getNumSamples() = 0;
 	
 	virtual void getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color) = 0;
+	
+	virtual Color getColor() { return color * power; }
+
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getColorProp("color", &color);
+		pb.getFloatProp("power", &power);
+	}
 };
 
 
 class PointLight: public Light {
-	Vector pos;
+	Vector pos = Vector(0, 0, 0);
 public:
-	PointLight(Color color, float power, Vector pos);
+	void fillProperties(ParsedBlock& pb)
+	{
+		Light::fillProperties(pb);
+		pb.getVectorProp("pos", &pos);
+	}
+
 	int getNumSamples() { return 1; }
+	
+	bool intersect(Ray ray, IntersectionInfo& info) override
+	{
+		return false;
+	}
 	
 	void getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color) override;
 };
@@ -51,12 +73,22 @@ public:
 class RectLight: public Light {
 	Transform T;
 	int xSubd, ySubd;
+	Vector center;
+	double area;
 public:
-	RectLight(Color color, float power, Transform T, int xSubd = 3, int ySubd = 3);
+	void fillProperties(ParsedBlock& pb)
+	{
+		Light::fillProperties(pb);
+		pb.getIntProp("xSubd", &xSubd, 1);
+		pb.getIntProp("ySubd", &ySubd, 1);
+		pb.getTransformProp(T);
+	}
+	
+	void beginFrame();
 
 	int getNumSamples() { return xSubd * ySubd; }
 	
 	void getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color) override;
-};
 
-extern std::vector<Light*> lights;
+	bool intersect(Ray ray, IntersectionInfo& info) override;
+};

@@ -23,6 +23,7 @@
  */
 
 #include <math.h>
+#include "util.h"
 #include "matrix.h"
 
 Matrix rotationAroundX(double angle)
@@ -126,7 +127,9 @@ void Transform::scale(double x, double y, double z)
 
 void Transform::rotate(double yaw, double pitch, double roll)
 {
-	this->m = this->m * rotationAroundZ(roll) * rotationAroundX(pitch) * rotationAroundY(yaw);
+	this->m = this->m * rotationAroundZ(toRadians(roll)) * 
+	                    rotationAroundX(toRadians(pitch)) *
+	                    rotationAroundY(toRadians(yaw));
 	this->invM = inverseMatrix(m);	
 }
 

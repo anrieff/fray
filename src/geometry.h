@@ -26,12 +26,13 @@
 #include "vector.h"
 #include <functional>
 #include "matrix.h"
+#include "scene.h"
 
 class Geometry;
 struct IntersectionInfo {
 	double dist;
 	Vector ip;
-	Vector norm;
+	Vector norm, dNdx, dNdy;
 	double u, v;
 	Geometry* geom;
 };
@@ -44,7 +45,9 @@ public:
 	virtual bool intersect(Ray ray, IntersectionInfo& info) = 0;
 };
 
-class Geometry: public Intersectable {
+class Geometry: public Intersectable, public SceneElement {
+public:
+	ElementType getElementType() const { return ELEM_GEOMETRY; }
 };
 
 class Plane: public Geometry {
@@ -52,6 +55,12 @@ public:
 	double limit;
 	double height;
 	Plane(double limit = 128, double height = 0): limit(limit), height(height) {}
+
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getDoubleProp("y", &height);
+		pb.getDoubleProp("limit", &limit);
+	}
 	
 	bool intersect(Ray ray, IntersectionInfo& info) override;
 };
@@ -66,6 +75,11 @@ public:
 	{
 		O = position;
 		R = radius;
+	}
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getVectorProp("O", &O);
+		pb.getDoubleProp("R", &R);
 	}
 	
 	bool intersect(Ray ray, IntersectionInfo& info) override;
@@ -86,6 +100,11 @@ public:
 		O = position;
 		this->halfSide = halfSide;
 	}
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getVectorProp("O", &O);
+		pb.getDoubleProp("halfSide", &halfSide);
+	}
 	
 	bool intersect(Ray ray, IntersectionInfo& info) override;
 	
@@ -97,6 +116,14 @@ public:
 	Geometry* right;
 	
 	virtual bool boolOp(bool inLeft, bool inRight) = 0;
+
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.requiredProp("left");
+		pb.requiredProp("right");
+		pb.getGeometryProp("left", &left);
+		pb.getGeometryProp("right", &right);
+	}
 	
 	bool intersect(Ray ray, IntersectionInfo& info) override;
 };
@@ -126,10 +153,24 @@ public:
 };
 
 struct Shader;
-struct Node: public Intersectable {
-	Geometry* geometry;
-	Shader* shader;
+struct BumpTexture;
+struct Node: public Intersectable, public SceneElement {
+	Geometry* geometry = nullptr;
+	Shader* shader = nullptr;
 	Transform T;
+	Texture* bump = nullptr;
+
+	// from Intersectable:
 	bool intersect(Ray ray, IntersectionInfo& info) override;
+
+	// from SceneElement:
+	ElementType getElementType() const { return ELEM_NODE; }
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getGeometryProp("geometry", &geometry);
+		pb.getShaderProp("shader", &shader);
+		pb.getTransformProp(T);
+		pb.getTextureProp("bump", &bump);
+	}
 };
 

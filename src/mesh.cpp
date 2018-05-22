@@ -66,6 +66,7 @@ void KDTreeNode::initLeafNode(const vector<int>& triangles)
 void Mesh::beginRender()
 {
 	computeBoundingGeometry();
+	if (normals.empty()) faceted = true;
 }
 
 
@@ -80,13 +81,15 @@ void Mesh::computeBoundingGeometry()
 	for (int i = 0; i < int(triangles.size()); i++)
 		allTriangles.push_back(i);
 	
-	const long long start = getTicks();
-	kdRoot = new KDTreeNode;
-	buildKD(kdRoot, allTriangles, bbox, 0);
-	const long long end = getTicks();
-	
-	printf("KD Tree for %d triangles built in %u milliseconds (%d nodes, max depth = %d, avg depth = %.1f)\n", 
-			int(triangles.size()), unsigned(end - start), numNodes, maxTreeDepth, nodeDepthSum / float(numNodes));
+	if (useKD && allTriangles.size() > 20) {
+		const long long start = getTicks();
+		kdRoot = new KDTreeNode;
+		buildKD(kdRoot, allTriangles, bbox, 0);
+		const long long end = getTicks();
+		
+		printf("KD Tree for %d triangles built in %u milliseconds (%d nodes, max depth = %d, avg depth = %.1f)\n", 
+				int(triangles.size()), unsigned(end - start), numNodes, maxTreeDepth, nodeDepthSum / float(numNodes));
+	}
 }
 
 Mesh::~Mesh()
@@ -129,13 +132,9 @@ bool Mesh::intersectTriangle(const Ray& ray, const Triangle& T, IntersectionInfo
 			info.u = texCoord.x;
 			info.v = texCoord.y;
 			
-			if (bumpMap) {
-				float dx, dy;
-				bumpMap->getDeflection(info, dx, dy);
-				info.norm += dx * T.dNdx + dy * T.dNdy;
-				info.norm.normalize();
-			}				
 		}
+		info.dNdx = T.dNdx;
+		info.dNdy = T.dNdy;
 		return true;
 	}
 	
@@ -249,6 +248,7 @@ bool Mesh::loadFromOBJ(const char* filename)
 			}
 		}
 	}
+	if (normals.size() == 1) normals.clear();
 
 	fclose(f);
 

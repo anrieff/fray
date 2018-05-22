@@ -22,6 +22,7 @@
  * @Brief Raytracer main file
  */
 #include <math.h>
+#include <string.h>
 #include <vector>
 #include "util.h"
 #include "sdl.h"
@@ -35,9 +36,11 @@
 #include "lights.h"
 #include "shading.h"
 #include "environment.h"
+#include "random_generator.h"
 using namespace std;
 
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE];
+char sceneFile[256] = "data/cornell_box.fray";
 
 bool visible(const Vector& a, const Vector& b)
 {
@@ -47,9 +50,9 @@ bool visible(const Vector& a, const Vector& b)
 	double maxDist = distance(a, b);
 	ray.dir.normalize();
 	
-	for (auto node: nodes) {
+	for (auto node: scene.nodes) {
 		IntersectionInfo info;
-		if (node.intersect(ray, info) && info.dist < maxDist) {
+		if (node->intersect(ray, info) && info.dist < maxDist) {
 			return false;
 		}
 	}
@@ -57,41 +60,138 @@ bool visible(const Vector& a, const Vector& b)
 	return true;
 }
 
-Color raytrace(Ray ray)
+void applyBumpMapping(Node& closestNode, IntersectionInfo& info)
 {
+	if (!closestNode.bump) return;
 	
-	if (ray.depth > MAX_TRACE_DEPTH) return Color(0, 0, 0);
+	void* interface = closestNode.bump->getInterface(BumpMapperInterface::ID);
+	if (interface) {
+		static_cast<BumpMapperInterface*>(interface)->modifyNormal(info);
+	}
+}
+
+Vector hemisphereSample(const IntersectionInfo& info, Vector& resultRay)
+{
+	// we want unit resultRay (direction), such that dot(info.norm, resultRay) >= 0
 	
-	Node closestNode;
+	Random& rnd = getRandomGen();
+	
+	double u = rnd.randdouble();
+	double v = rnd.randdouble();
+	
+	double theta = 2 * PI * u;
+	double phi = acos(2 * v - 1);
+	
+	Vector v(
+		sin(phi) * cos(theta),
+		cos(phi),
+		sin(phi) * sin(theta)
+	);
+	
+	// v is uniform in the unit sphere
+	
+	if (dot(v, info.norm) < 0)
+		resultRay = -v;
+	else
+		resultRay = v;
+}
+
+Color pathtrace(Ray ray, Color pathMultiplier)
+{
+	if (ray.depth > MAX_TRACE_DEPTH ||
+		pathMultiplier.intensity() < 0.01 
+		)
+		return Color(0, 0, 0);
+	
+	Node* closestNode = nullptr;
 	IntersectionInfo closestIntersection;
 	closestIntersection.dist = 1e99;
 	
-	for (auto node: nodes) {
+	for (auto node: scene.nodes) {
 		IntersectionInfo info;
-		if (node.intersect(ray, info) && info.dist < closestIntersection.dist) {
+		if (node->intersect(ray, info) && info.dist < closestIntersection.dist) {
 			closestIntersection = info;
 			closestNode = node;
 		}
 	}
 	
-	if (closestIntersection.dist >= 1e99) {
-		if (env.loaded) return env.getEnvironment(ray.dir);
+	bool hitLight = false;
+	Light* intersectedLight = nullptr;
+	for (auto light: scene.lights) {
+		IntersectionInfo info;
+		if (light->intersect(ray, info) && info.dist < closestIntersection.dist) {
+			hitLight = true;
+			closestIntersection = info;
+			intersectedLight = light;
+		}
+	}
+	
+	if (hitLight) {
+		return intersectedLight->getColor() * pathMultiplier;
+	}
+	
+	if (!closestNode) {
+		if (scene.environment)
+			return scene.environment->getEnvironment(ray.dir) * pathMultiplier;
+		else
+			return Color(0, 0, 0);
+	}
+		
+	applyBumpMapping(*closestNode, closestIntersection);
+	
+	//return closestNode->shader->shade(ray, closestIntersection);
+	
+}
+
+Color raytrace(Ray ray)
+{
+	if (ray.depth > MAX_TRACE_DEPTH) return Color(0, 0, 0);
+	
+	Node* closestNode = nullptr;
+	IntersectionInfo closestIntersection;
+	closestIntersection.dist = 1e99;
+	
+	for (auto node: scene.nodes) {
+		IntersectionInfo info;
+		if (node->intersect(ray, info) && info.dist < closestIntersection.dist) {
+			closestIntersection = info;
+			closestNode = node;
+		}
+	}
+	
+	bool hitLight = false;
+	Light* intersectedLight = nullptr;
+	for (auto light: scene.lights) {
+		IntersectionInfo info;
+		if (light->intersect(ray, info) && info.dist < closestIntersection.dist) {
+			hitLight = true;
+			closestIntersection = info;
+			intersectedLight = light;
+		}
+	}
+	
+	if (hitLight) {
+		return intersectedLight->getColor();
+	}
+	
+	if (!closestNode) {
+		if (scene.environment) return scene.environment->getEnvironment(ray.dir);
 		else return Color(0, 0, 0);
 	}
 		
+	applyBumpMapping(*closestNode, closestIntersection);
 	
-	return closestNode.shader->shade(ray, closestIntersection);
+	return closestNode->shader->shade(ray, closestIntersection);
 }
 
 Color raytrace(double x, double y)
 {
-	return raytrace(camera.getScreenRay(x, y));
+	return raytrace(scene.camera->getScreenRay(x, y));
 }
 
 void render()
 {
 	const long long startTicks = getTicks();
-	camera.beginFrame();
 	
 	const double offsets[5][2] = {
 		{ 0, 0 }, 
@@ -103,31 +203,32 @@ void render()
 	int numAASamples = COUNT_OF(offsets);
 	long long lastUpdate = startTicks;
 	int pixelSamples = 1;
-	if (antialiasing) pixelSamples = numAASamples;
-	if (numDOFsamples > 0)
-		pixelSamples = numDOFsamples;
+	if (scene.settings.wantAA) pixelSamples = numAASamples;
+	if (scene.camera->dof)
+		pixelSamples = max(pixelSamples, scene.camera->numDOFSamples);
+	Random& rnd = getRandomGen();
 	
 	for (int y = 0; y < frameHeight(); y++) {
 		for (int x = 0; x < frameWidth(); x++) {
 			Color avg(0, 0, 0);
 			for (int i = 0; i < pixelSamples; i++) {
-				if (camera.stereoSeparation == 0) {
+				if (scene.camera->stereoSeparation == 0) {
 					Ray ray;
-					if (numDOFsamples > 0) {
-						ray = camera.getDOFRay(x + randomFloat(), y + randomFloat());
+					if (scene.camera->dof) {
+						ray = scene.camera->getDOFRay(x + rnd.randfloat(), y + rnd.randfloat());
 					} else {
-						ray = camera.getScreenRay(x + offsets[i][0], y + offsets[i][1]);
+						ray = scene.camera->getScreenRay(x + offsets[i][0], y + offsets[i][1]);
 					}
 					avg += raytrace(ray);
 				} else {
 					Ray leftRay, rightRay;
-					leftRay = camera.getScreenRay(x + offsets[i][0], y + offsets[i][1], CAMERA_LEFT);
-					rightRay = camera.getScreenRay(x + offsets[i][0], y + offsets[i][1], CAMERA_RIGHT);
+					leftRay = scene.camera->getScreenRay(x + offsets[i][0], y + offsets[i][1], CAMERA_LEFT);
+					rightRay = scene.camera->getScreenRay(x + offsets[i][0], y + offsets[i][1], CAMERA_RIGHT);
 					Color leftColor = raytrace(leftRay);
 					Color rightColor = raytrace(rightRay);
 					leftColor.adjustSaturation(0.1f);
 					rightColor.adjustSaturation(0.1f);
-					avg += leftColor * camera.leftMask + rightColor * camera.rightMask;
+					avg += leftColor * scene.camera->leftMask + rightColor * scene.camera->rightMask;
 				}
 			}
 			vfb[y][x] = avg / pixelSamples;
@@ -143,11 +244,26 @@ void render()
 	printf("Frame took %d ms\n", elapsed);
 }
 
+bool parseCmdLine(int argc, char** argv)
+{
+	if (argc == 1) return true;
+	if (argc != 2 || !fileExists(argv[1])) {
+		printf("Usage: fray [scene.fray]\n");
+		return false;
+	} else {
+		strcpy(sceneFile, argv[1]);
+		return true;
+	}
+}
+
 int main(int argc, char** argv)
 {
-	initGraphics(RESX, RESY);
-	setupScene_Forest();
-	camera.beginFrame();
+	if (!parseCmdLine(argc, argv)) return -1;
+	initRandom(42);
+	scene.parseScene(sceneFile);
+	initGraphics(scene.settings.frameWidth, scene.settings.frameHeight);
+	scene.beginRender();
+	scene.beginFrame();
 	render();
 	displayVFB(vfb);
 	waitForUserExit();

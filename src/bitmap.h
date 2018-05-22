@@ -41,6 +41,8 @@ public:
 	Color getPixel(int x, int y) const; //!< Gets the pixel at coordinates (x, y). Returns black if (x, y) is outside of the image
 	void setPixel(int x, int y, const Color& col); //!< Sets the pixel at coordinates (x, y).
 	
+	void differentiate(); //!< compute differential image, for bump mapping
+	
 	bool loadBMP(const char* filename); //!< Loads an image from a BMP file. Returns false in the case of an error
 	bool saveBMP(const char* filename); //!< Saves the image to a BMP file (with clamping, etc). Returns false in the case of an error (e.g. read-only media)
 

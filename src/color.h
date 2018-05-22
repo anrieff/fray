@@ -98,6 +98,13 @@ struct Color {
 		g *= multiplier;
 		b *= multiplier;
 	}
+	/// multiplies the color with another color
+	void operator *= (const Color& rhs)
+	{
+		r *= rhs.r;
+		g *= rhs.g;
+		b *= rhs.b;
+	}
 	/// divides the color
 	void operator /= (float divider)
 	{

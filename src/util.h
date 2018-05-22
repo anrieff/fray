@@ -38,10 +38,6 @@ inline double toRadians(double angle) { return angle / 180.0 * PI; }
 inline double toDegrees(double angle_rad) { return angle_rad / PI * 180.0; }
 inline int nearestInt(float x) { return (int) floor(x + 0.5f); }
 
-/// returns a random floating-point number in [0..1).
-/// This is not a very good implementation. A better method is to be employed soon.
-inline float randomFloat() { return rand() / (float) RAND_MAX; }
-
 std::string upCaseString(std::string s); //!< returns the string in UPPERCASE
 std::string extensionUpper(const char* fileName); //!< Given a filename, return its extension in UPPERCASE
 std::vector<std::string> tokenize(std::string s);

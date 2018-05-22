@@ -22,15 +22,9 @@
  * @Brief Describes light sources
  */
 #include "lights.h"
+#include "random_generator.h"
 
 std::vector<Light*> lights;
-
-PointLight::PointLight(Color color, float power, Vector pos)
-{
-	this->color = color;
-	this->power = power;
-	this->pos = pos;
-}
 
 void PointLight::getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color)
 {
@@ -38,15 +32,17 @@ void PointLight::getNthSample(int sampleIdx, const Vector& shadePos, Vector& sam
 	color = this->color * this->power;
 }
 
-
-RectLight::RectLight(Color color, float power, Transform T, int xSubd, int ySubd)
+void RectLight::beginFrame(void)
 {
-	this->color = color;
-	this->power = power;
-	this->T = T;
-	this->xSubd = xSubd;
-	this->ySubd = ySubd;
+	center = T.transformPoint(Vector(0, 0, 0));
+	Vector a = T.transformPoint(Vector(-0.5, 0.0, -0.5));
+	Vector b = T.transformPoint(Vector( 0.5, 0.0, -0.5));
+	Vector c = T.transformPoint(Vector( 0.5, 0.0,  0.5));
+	float width = (float) (b - a).length();
+	float height = (float) (b - c).length();
+	area = width * height; // obtain the area of the light, in world space
 }
+
 
 void RectLight::getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color)
 {
@@ -59,19 +55,47 @@ void RectLight::getNthSample(int sampleIdx, const Vector& shadePos, Vector& samp
 	double areaXstart = column * areaXsize;
 	double areaYstart = row * areaYsize;
 	
-	double p_x = areaXstart + areaXsize * randomFloat();
-	double p_y = areaYstart + areaYsize * randomFloat();
+	Random& rnd = getRandomGen();
+	
+	double p_x = areaXstart + areaXsize * rnd.randfloat();
+	double p_y = areaYstart + areaYsize * rnd.randfloat();
+	Vector pointOnLight(p_x - 0.5, 0, p_y - 0.5); // ([-0.5..0.5], 0, [-0.5..0.5])
 	
 	// check if shaded point is behind the lamp:
 	Vector shadedPointInLightSpace = T.untransformPoint(shadePos);
 	if (shadedPointInLightSpace.y > 0) {
 		samplePos.makeZero();
 		color.makeZero();
-		return;
+	} else {
+		float cosWeight = float(dot(Vector(0, -1, 0), shadedPointInLightSpace) / shadedPointInLightSpace.length());
+		color = this->color * power * area * cosWeight;
 	}
 	
-	Vector pointOnLight(p_x - 0.5, 0, p_y - 0.5); // ([-0.5..0.5], 0, [-0.5..0.5])
-	
 	samplePos = T.transformPoint(pointOnLight);
-	color = this->color * this->power;
+}
+
+bool RectLight::intersect(Ray ray, IntersectionInfo& info)
+{
+	Ray rayLocal;
+	rayLocal.start = T.untransformPoint(ray.start);
+	rayLocal.dir = T.untransformDir(ray.dir);
+	
+	if (rayLocal.start.y >= 0) return false;
+	if (rayLocal.dir.y <= 0) return false;
+	
+	double travelByY = fabs(rayLocal.start.y);
+	double unitTravel = fabs(rayLocal.dir.y);
+	double scaling = travelByY / unitTravel;
+
+	info.ip = rayLocal.start + rayLocal.dir * scaling;
+	
+	if (fabs(info.ip.x) > 0.5 || fabs(info.ip.z) > 0.5) return false;
+	
+	info.norm = Vector(0, -1, 0);
+	
+	info.ip = T.transformPoint(info.ip);
+	info.norm = T.transformDir(info.norm);
+	info.dist = distance(ray.start, info.ip);
+
+	return true;
 }

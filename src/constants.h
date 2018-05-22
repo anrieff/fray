@@ -24,10 +24,9 @@
 #pragma once
 
 #define VFB_MAX_SIZE 3000
-//#define RESX 903
-//#define RESY 602
-#define RESX 1024
-#define RESY 768
+#define DEFAULT_FRAME_WIDTH 800
+#define DEFAULT_FRAME_HEIGHT 600
+
 #define PI 3.141592653589793238
 #define INF 1e99
 
@@ -37,3 +36,9 @@
 
 #define MAX_TRIANGLES_PER_LEAF 20
 #define MAX_DEPTH 64
+
+// large `float' number:
+#define LARGE_FLOAT 1e17f
+
+// large `double' number:
+#define LARGE_DOUBLE 1e120

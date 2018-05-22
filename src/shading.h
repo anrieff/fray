@@ -26,11 +26,14 @@
 #include "color.h"
 #include "geometry.h"
 #include "bitmap.h"
+#include "scene.h"
 
 
-class Texture {
+class Texture: public SceneElement {
 public:
 	virtual ~Texture() {}
+	
+	ElementType getElementType() const { return ELEM_TEXTURE; }
 	
 	virtual Color sample(Ray ray, const IntersectionInfo& info) = 0;
 };
@@ -40,7 +43,14 @@ public:
 	Color color1 = Color(0.7, 0.7, 0.7);
 	Color color2 = Color(0.2, 0.2, 0.2);
 	double scaling = 0.05;
-	
+
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getColorProp("color1", &color1);
+		pb.getColorProp("color2", &color2);
+		pb.getDoubleProp("scaling", &scaling);
+	}
+		
 	CheckerTexture() {}	
 	CheckerTexture(const Color& color1, const Color& color2): color1(color1), color2(color2) {}
 	Color sample(Ray ray, const IntersectionInfo& info) override;
@@ -50,26 +60,58 @@ class BitmapTexture: public Texture {
 	Bitmap bmp;
 public:
 	double scaling = 1;
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getDoubleProp("scaling", &scaling);
+		scaling = 1/scaling;
+		if (!pb.getBitmapFileProp("file", bmp))
+			pb.requiredProp("file");
+	}
 	
-	BitmapTexture(const char* filename);
 	Color sample(Ray ray, const IntersectionInfo& info) override;
 };
 
-class BumpTexture {
+struct BumpMapperInterface {
+	static const int ID = 0x20180522;
+
+	virtual ~BumpMapperInterface() {}
+	virtual void getDeflection(const IntersectionInfo& info, float& dx, float& dy) = 0;
+	virtual void modifyNormal(IntersectionInfo& info) = 0;
+};
+
+class BumpTexture: public Texture, public BumpMapperInterface {
 	Bitmap bumpTex;
 public:
 	double scaling = 1;
-	float bumpIntensity = 10.0f;
-	BumpTexture(const char* filename);
-	void getDeflection(const IntersectionInfo& info, float& dx, float& dy);
+	double bumpIntensity = 10.0f;
+
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getDoubleProp("strength", &bumpIntensity);
+		pb.getDoubleProp("scaling", &scaling);
+		if (!pb.getBitmapFileProp("file", bumpTex))
+			pb.requiredProp("file");
+	}
+
+	void* getInterface(int id)
+	{
+		if (id == BumpMapperInterface::ID) return (BumpMapperInterface*) this;
+		return nullptr;
+	}
+	Color sample(Ray ray, const IntersectionInfo& info);
+	void getDeflection(const IntersectionInfo& info, float& dx, float& dy) override;
+	void modifyNormal(IntersectionInfo& info) override;
+	
+	void beginRender() override;
 };
 
-class Shader {
+class Shader: public SceneElement {
 public:
-	Texture* diffuseTex;
-	
+	Texture* diffuseTex = nullptr;
+		
 	virtual ~Shader() {}
-	
+	ElementType getElementType() const { return ELEM_SHADER; }
+		
 	virtual Color shade(Ray ray, const IntersectionInfo& info) = 0;
 };
 
@@ -84,24 +126,31 @@ public:
 
 class Lambert: public Shader {
 public:
+	Color color = Color(1, 1, 1);
 	
-	Lambert(Texture* texture)
+	void fillProperties(ParsedBlock& pb)
 	{
-		diffuseTex = texture;
+		pb.getColorProp("color", &color);
+		pb.getTextureProp("texture", &diffuseTex);
 	}
-	
+
 	Color shade(Ray ray, const IntersectionInfo& info) override;
 };
 
 class Phong: public Shader {
 public:
-	float exponent = 10.0f;
-	float specularMultiplier = 0.25f;
+	Color color = Color(1, 1, 1);
+	double exponent = 10.0f;
+	double specularMultiplier = 0.25f;
 	Color specularColor = Color(0.75f, 0.75f, 0.75f);
 	
-	Phong(Texture* texture)
+	void fillProperties(ParsedBlock& pb)
 	{
-		diffuseTex = texture;
+		pb.getColorProp("color", &color);
+		pb.getTextureProp("texture", &diffuseTex);
+		pb.getDoubleProp("specularExponent", &exponent);
+		pb.getDoubleProp("specularMultiplier", &specularMultiplier);
+		pb.getColorProp("specularColor", &specularColor);
 	}
 	
 	Color shade(Ray ray, const IntersectionInfo& info) override;
@@ -109,12 +158,26 @@ public:
 
 class Reflection: public Shader {
 	double deflectionScaling;
+	double glossiness;
 	bool pureReflection;
 	int numSamples;
 public:
 	Color mult = Color(1, 1, 1); // typically Color(0.98, 0.98, 0.98)
 	
-	Reflection(float multiplier = 1, double glossiness = 1.0, int glossinessSamples = 25);
+	void fillProperties(ParsedBlock& pb)
+	{
+		double m = 1;
+		pb.getDoubleProp("multiplier", &m);
+		mult = Color(m, m, m);
+		pb.getDoubleProp("glossiness", &glossiness, 0, 1);
+		pb.getIntProp("numSamples", &numSamples, 1);
+	}
+	
+	void beginFrame() override
+	{
+		pureReflection = (glossiness == 1.0);
+		deflectionScaling = pow(10.0, 2 - 4*glossiness);		
+	}
 	
 	Color shade(Ray ray, const IntersectionInfo& info) override;
 };
@@ -124,7 +187,14 @@ public:
 	double ior = 1;
 	Color mult = Color(1, 1, 1);
 	
-	Refraction(double ior, Color mult = Color(1, 1, 1)): ior(ior), mult(mult) {}
+	void fillProperties(ParsedBlock& pb)
+	{
+		double m = 1;
+		pb.getDoubleProp("multiplier", &m);
+		mult = Color(m, m, m);
+		pb.getDoubleProp("ior", &ior, 1e-6, 10);
+	}
+	
 				
 	Color shade(Ray ray, const IntersectionInfo& info) override;
 };
@@ -133,7 +203,11 @@ class FresnelTexture: public Texture {
 public:
 	double ior = 1;
 	
-	FresnelTexture(double ior): ior(ior) {}
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getDoubleProp("ior", &ior, 1e-6, 10);
+	}
+
 	Color sample(Ray ray, const IntersectionInfo& info) override;	
 };
 
@@ -147,6 +221,7 @@ class Layered: public Shader {
 	Layer layers[32];
 public:
 	
+	void fillProperties(ParsedBlock& pb);
 	// adds another layer to the top of the layer stack (the first added layer (#0) is the most bottom one;
 	// #1 is directly above it, and so forth:
 	void addLayer(Shader* shader, Color opacity = Color(1, 1, 1), Texture* texture = nullptr);

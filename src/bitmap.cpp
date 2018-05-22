@@ -296,3 +296,19 @@ bool Bitmap::saveImage(const char* filename)
 	return false;
 }
 
+void Bitmap::differentiate()
+{
+	Bitmap bumpTex;
+	bumpTex.generateEmptyImage(this->width, this->height);
+	
+	for (int y = 0; y < height; y++) {
+		for (int x = 0; x < width; x++) {
+			float dx = getPixel(x, y).intensity() - 
+					   getPixel((x + 1) % width, y).intensity();
+			float dy = getPixel(x, y).intensity() -
+					   getPixel(x, (y + 1) % height).intensity();
+			bumpTex.setPixel(x, y, Color(dx, dy, 0));
+		}
+	}
+	std::swap(this->data, bumpTex.data);
+}
