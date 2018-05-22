@@ -1,0 +1,119 @@
+
+GlobalSettings {
+	frameWidth          640
+	frameHeight         640
+	ambientLight        (0.15, 0.15, 0.15)
+	maxTraceDepth 6
+	gi            0
+	wantAA false
+}
+
+Camera camera {
+	position     (278. 273. -800)
+	yaw          0
+	pitch        0
+	roll         0
+	fov         50
+	aspectRatio  1
+}
+
+//////////////////////// LIGHTS ////////////////////////////////////////////
+
+RectLight {
+
+	scale (130, 1, 105)
+	translate (278, 547.7, 279.5)
+	
+	xSubd 4
+	ySubd 4
+
+	// Color:
+	color (1, 0.85, 0.43)
+	
+	// Power (for DI):
+	power 9.15750915751
+	// Power (for GI):
+	//power 27.472527472530004       // x3
+}
+
+//////////////////////// GEOMETRIES ////////////////////////////////////////
+
+Mesh mesh_floor {
+	file "cornell/floor.obj"
+}
+
+Mesh mesh_ceiling {
+	file "cornell/ceiling.obj"
+}
+
+Mesh mesh_backwall {
+	file "cornell/backwall.obj"
+}
+
+Mesh mesh_rightwall {
+	file "cornell/rightwall.obj"
+}
+
+Mesh mesh_leftwall {
+	file "cornell/leftwall.obj"
+}
+
+Mesh mesh_shortblock {
+	file "cornell/shortblock.obj"
+}
+
+Mesh mesh_tallblock {
+	file "cornell/tallblock.obj"
+}
+
+
+//////////////////////// TEXTURES & SHADERS  ///////////////////////////////
+
+Lambert white {
+	color (0.76, 0.75, 0.5)
+}
+
+Lambert green {
+	color (0.15, 0.48, 0.09)
+}
+
+Lambert red {
+	color (0.63, 0.06, 0.04)
+}
+
+///////////////////////// NODES /////////////////////////////////////////////////
+
+Node floor {
+	geometry mesh_floor
+	shader white
+}
+
+Node ceiling {
+	geometry mesh_ceiling
+	shader white
+}
+
+Node backwall {
+	geometry mesh_backwall
+	shader white
+}
+
+Node rightwall {
+	geometry mesh_rightwall
+	shader green
+}
+
+Node leftwall {
+	geometry mesh_leftwall
+	shader red
+}
+
+Node shortblock {
+	geometry mesh_shortblock
+	shader white
+}
+
+Node tallblock {
+	geometry mesh_tallblock
+	shader white
+}

@@ -1,0 +1,198 @@
+//
+
+// 1. First, some global settings
+GlobalSettings {
+	frameWidth          1024
+	frameHeight         768
+	ambientLight        (0.28, 0.30, 0.35)
+	maxTraceDepth		5
+	wantAA				true
+}
+
+PointLight {
+	pos            (160, 80, 40)
+	color          (1, 1, 1)
+	power           10000
+}
+
+// 2. A camera
+// (to enable the spherical lens camera (which introduces heavy spherical abberation)), replace "Camera" with "SphericalLensCamera"
+
+Camera camera {
+	position      (120, 22, 60)
+	yaw           11.46
+	pitch        -15
+	roll          0.0
+	fov           90
+	aspectRatio   1.333
+	//stereoSeparation 0.25 // comment this out to disable the stereoscopic effect
+	dof		off
+	numSamples 100
+	fNumber 5.6
+	autofocus off
+	focalPlaneDist 21.48
+}
+
+/*
+// top view
+Camera camera {
+	pos          (130, 85, 75)
+	yaw           11.46
+	pitch        -90
+	roll          0.0
+	fov           90
+	aspect        1.333
+}
+*/
+
+Plane floor {
+	y      0
+	limit   128
+}
+
+CheckerTexture checker {
+	color1    (0.5, 0.5, 0.25)
+	color2    (0.25, 0.25, 0.25)
+	scaling 0.75
+}
+
+Lambert floorShader {
+	color (1, 1, 1)
+	texture  checker
+}
+
+// 3. A floor node, using a plane as a geometry, and a flat shader with a checker texture
+Node floorNode {
+	geometry  floor
+	shader    floorShader
+	translate (100, 0, 96)
+}
+
+
+Mesh dice {
+	file "geom/truncated_cube.obj"
+	faceted true
+}
+
+BumpTexture diceBump {
+	file "texture/zar-bump.bmp"
+	strength 5
+}
+
+Mesh teapot {
+	file "geom/teapot_hires.obj"
+}
+
+Mesh wineglass {
+	file "geom/newwine.obj"
+	backfaceCulling false
+}
+
+CheckerTexture teapot_checker {
+	color1 (0.9, 0.1, 0.1)
+	color2 (0.05, 0.05, 0.07)
+	scaling 50
+}
+
+Lambert teapot_lambert {
+	color (1, 1, 1)
+	texture teapot_checker
+}
+
+Phong white_flat {
+	color (0.7, 0.7, 0.7)
+	specularExponent 200
+}
+
+Refl reflection {
+	multiplier 0.96
+}
+
+Layered teapot_layered {
+	layer teapot_lambert (1, 1, 1)
+	layer white_flat (0.16, 0.16, 0.16)
+	layer reflection (0.05, 0.07, 0.09)
+}
+
+BitmapTexture dice_texture {
+	file "texture/zar-texture.bmp"
+}
+
+Lambert flat {
+	color (1,1,1)
+	texture dice_texture
+}
+
+Refr refraction {
+	ior 1.5
+	multiplier 0.96
+}
+
+Fresnel fresnel {
+	ior 1.5
+}
+
+Layered glass {
+	layer refraction (1, 1, 1)
+	layer reflection (1, 1, 1) fresnel
+}
+
+Sphere ball {
+	R 0.5
+}
+
+Refl ball_sfc {
+	glossiness 0.92
+	numSamples 10
+}
+/*
+Node ball1 {
+	geometry ball
+	shader ball_sfc
+	translate (125.5, 19, 81)
+}
+
+Node ball2 {
+	geometry ball
+	shader ball_sfc
+	translate (126, 16, 80.7)
+}
+
+Node ball3 {
+	geometry ball
+	shader ball_sfc
+	translate (126.2, 12.5, 79.5)
+}
+
+Node wineglass {
+	geometry wineglass
+	//shader	white_flat
+	shader	 glass
+	translate (126, 0, 80)
+	scale (17, 17, 17)
+}
+*/
+Node dice {
+	geometry   dice
+	shader     flat
+	translate  (100, 10.1, 96)
+	rotate     (63, 0, 0)
+	scale      (2.5, 2.5, 2.5)
+	bump       diceBump
+}
+
+Node teapotNode {
+	geometry   teapot
+	//shader     teapot_layered
+	shader     teapot_lambert
+	translate  (110, 19, 90)
+	rotate     (-27, 0, 30)
+	scale      (7.5, 7.5, 7.5)
+}
+
+
+
+// 5. The cubemap environment:
+CubemapEnvironment environment {
+	folder "env/forest"
+}

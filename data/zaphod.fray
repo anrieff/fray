@@ -1,0 +1,71 @@
+#
+# A scene that imitates a page of a book ("The hitch-hiker's guide to the galaxy" for those of you who are curious),
+# photographed from an angle with a dSLR with wide-aperture settings.
+#
+# The actual photograph was taken with a Canon 350D and 35mm F/2 at f/2, and at the closest focus, 24cm.
+#
+# In the scene here, the camera is located a bit higher than it was in the real shot; I'm just too tired to
+# tweak it any more
+#
+
+GlobalSettings {
+	frameWidth          645     # imitate 3:2 aspect ratio
+	frameHeight         430
+	ambientLight        (0.0, 0.0, 0.0)
+
+}
+
+
+PointLight l1 {
+	pos    (200, 200, -200)           # Simulates my incadescent lamp in the center of the room
+	power   200000
+	color  (0.351, 0.332, 0.187)      # Simulates the yellowish color of the incadescent lamp
+}
+
+
+Camera camera {
+	position      (1.5, 17, -19.5)
+	yaw           5.2
+	pitch        -41.8
+	roll          2.3
+	fov           38      # This is probably not quite correct; should probably be closer to 46 degrees (35mm on APS-C sensor)
+	aspectRatio   1.5
+	dof           on
+	focalPlaneDist 25.29
+	fNumber       2.0     # This is also not quite correct, the actual aperture was f/2.0
+	numSamples      100
+}
+
+//////////////////////// LIGHTS ////////////////////////////////////////////
+
+//PointLight l2 {
+//	pos	(200, 200, -200)           # Simulates my incadescent lamp in the center of the room
+//	color (103000, 101000, 75800)      # Simulates the yellowish color of the incadescent lamp
+//}
+
+//////////////////////// GEOMETRIES ////////////////////////////////////////
+
+Mesh paper {
+	file "geom/leaf.obj"                    # a simple quad - (-1, -1) .. (1, 1)
+	faceted true
+}
+
+//////////////////////// TEXTURES & SHADERS  ///////////////////////////////
+
+BitmapTexture paper {
+	file "texture/zaphod.bmp"
+}
+
+Lambert paper {
+	texture paper
+}
+
+
+///////////////////////// NODES /////////////////////////////////////////////////
+
+Node book {
+	geometry  paper
+	shader    paper
+	scale (10, 10, 10)
+}
+
