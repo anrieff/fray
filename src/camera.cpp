@@ -51,13 +51,19 @@ void Camera::beginFrame()
 	apertureSize = 1.0 / fNumber;
 }
 
-Ray Camera::getScreenRay(double x, double y)
+Ray Camera::getScreenRay(double x, double y, WhichCamera whichCamera)
 {
 	Ray result;
 	result.dir = topLeft + (topRight - topLeft) * (x / w)
 	                     + (bottomLeft - topLeft) * (y / h);
 	result.dir.normalize();
 	result.start = this->pos;
+	if (whichCamera != CAMERA_CENTER) {
+		if (whichCamera == CAMERA_LEFT)
+			result.start += rightDir * -stereoSeparation;
+		else
+			result.start += rightDir * stereoSeparation;
+	}
 	return result;
 }
 

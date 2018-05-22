@@ -54,6 +54,7 @@ void setupScene_Forest()
 	setupSceneCommon();
 	ambientLightColor = Color(1, 1, 0.9) * 0.5;
 	antialiasing = true;
+	camera.stereoSeparation = 0.8;
 	
 	Node plane;
 	

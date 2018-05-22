@@ -24,6 +24,13 @@
 #pragma once
 
 #include "vector.h"
+#include "color.h"
+
+enum WhichCamera {
+	CAMERA_CENTER,
+	CAMERA_LEFT,
+	CAMERA_RIGHT,
+};
 
 class Camera {
 	Vector topLeft, topRight, bottomLeft;
@@ -38,10 +45,12 @@ public:
 	double aspectRatio = 1.3333;
 	double focalPlaneDist = 5.0;
 	double fNumber;
+	double stereoSeparation = 0;
+	Color leftMask = Color(1, 0, 0), rightMask = Color(0, 1, 1);
 	
 	void beginFrame();
 	
-	Ray getScreenRay(double x, double y);
+	Ray getScreenRay(double x, double y, WhichCamera whichCamera = CAMERA_CENTER);
 	Ray getDOFRay(double x, double y);
 	
 };

@@ -111,13 +111,24 @@ void render()
 		for (int x = 0; x < frameWidth(); x++) {
 			Color avg(0, 0, 0);
 			for (int i = 0; i < pixelSamples; i++) {
-				Ray ray;
-				if (numDOFsamples > 0) {
-					ray = camera.getDOFRay(x + randomFloat(), y + randomFloat());
+				if (camera.stereoSeparation == 0) {
+					Ray ray;
+					if (numDOFsamples > 0) {
+						ray = camera.getDOFRay(x + randomFloat(), y + randomFloat());
+					} else {
+						ray = camera.getScreenRay(x + offsets[i][0], y + offsets[i][1]);
+					}
+					avg += raytrace(ray);
 				} else {
-					ray = camera.getScreenRay(x + offsets[i][0], y + offsets[i][1]);
+					Ray leftRay, rightRay;
+					leftRay = camera.getScreenRay(x + offsets[i][0], y + offsets[i][1], CAMERA_LEFT);
+					rightRay = camera.getScreenRay(x + offsets[i][0], y + offsets[i][1], CAMERA_RIGHT);
+					Color leftColor = raytrace(leftRay);
+					Color rightColor = raytrace(rightRay);
+					leftColor.adjustSaturation(0.1f);
+					rightColor.adjustSaturation(0.1f);
+					avg += leftColor * camera.leftMask + rightColor * camera.rightMask;
 				}
-				avg += raytrace(ray);
 			}
 			vfb[y][x] = avg / pixelSamples;
 		}
