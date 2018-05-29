@@ -806,10 +806,7 @@ void GlobalSettings::fillProperties(ParsedBlock& pb)
 	pb.getFloatProp("saturation", &saturation, 0, 1);
 	pb.getBoolProp("wantPrepass", &wantPrepass);
 	pb.getBoolProp("gi", &gi);
-	pb.getIntProp("numPaths", &numPaths, 1);
-	pb.getIntProp("numThreads", &numThreads, 0, 64);
-	pb.getBoolProp("interactive", &interactive);
-	pb.getBoolProp("fullscreen", &fullscreen);
+	pb.getIntProp("pathsPerPixel", &numPaths, 1);
 }
 
 bool GlobalSettings::needAApass()

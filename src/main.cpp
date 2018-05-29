@@ -40,7 +40,7 @@
 using namespace std;
 
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE];
-char sceneFile[256] = "data/cornell_box.fray";
+char sceneFile[256] = "data/smallpt.fray";
 
 bool visible(const Vector& a, const Vector& b)
 {
@@ -70,7 +70,7 @@ void applyBumpMapping(Node& closestNode, IntersectionInfo& info)
 	}
 }
 
-Vector hemisphereSample(const IntersectionInfo& info, Vector& resultRay)
+Vector hemisphereSample(const IntersectionInfo& info)
 {
 	// we want unit resultRay (direction), such that dot(info.norm, resultRay) >= 0
 	
@@ -82,7 +82,7 @@ Vector hemisphereSample(const IntersectionInfo& info, Vector& resultRay)
 	double theta = 2 * PI * u;
 	double phi = acos(2 * v - 1);
 	
-	Vector v(
+	Vector dir(
 		sin(phi) * cos(theta),
 		cos(phi),
 		sin(phi) * sin(theta)
@@ -90,13 +90,13 @@ Vector hemisphereSample(const IntersectionInfo& info, Vector& resultRay)
 	
 	// v is uniform in the unit sphere
 	
-	if (dot(v, info.norm) < 0)
-		resultRay = -v;
+	if (dot(dir, info.norm) > 0)
+		return dir;
 	else
-		resultRay = v;
+		return -dir;
 }
 
-Color pathtrace(Ray ray, Color pathMultiplier)
+Color pathtrace(Ray ray, Color pathMultiplier, Random& rnd)
 {
 	if (ray.depth > MAX_TRACE_DEPTH ||
 		pathMultiplier.intensity() < 0.01 
@@ -139,8 +139,42 @@ Color pathtrace(Ray ray, Color pathMultiplier)
 		
 	applyBumpMapping(*closestNode, closestIntersection);
 	
-	//return closestNode->shader->shade(ray, closestIntersection);
+	Ray newRay = ray;
+	newRay.depth++;
+	newRay.start = closestIntersection.ip + closestIntersection.norm * 1e-6;
+	Color brdfColor;
+	float rayPdf;
+	closestNode->shader->spawnRay(closestIntersection, ray, newRay, brdfColor, rayPdf);
 	
+	// Kajiya ("sampling the BRDF"):
+	Color fromBRDF = pathtrace(newRay, pathMultiplier * (brdfColor / rayPdf), rnd);
+	
+	int numLights = scene.lights.size();
+	int chosenLightIdx = rnd.randint(0, numLights - 1);
+	
+	Light* chosenLight = scene.lights[chosenLightIdx];
+	int numPoints = chosenLight->getNumSamples();
+	
+	int sampleIdx = rnd.randint(0, numPoints - 1);
+	
+	Vector lightPoint;
+	Color lightColor;
+	chosenLight->getNthSample(sampleIdx, closestIntersection.ip, lightPoint, lightColor);
+	
+	double solidAngle = chosenLight->solidAngle(closestIntersection);
+	
+	Color fromLight(0, 0, 0);
+	
+	if (solidAngle > 0 && visible(closestIntersection.ip + closestIntersection.norm * 1e-6, lightPoint)) {
+		float pdfLight = 1 / solidAngle;
+		float pdfThisLight = 1 / double(numLights);
+		Vector toLight = (lightPoint - closestIntersection.ip);
+		toLight.normalize();
+		Color brdfAtPoint = closestNode->shader->eval(closestIntersection, -ray.dir, toLight);
+		fromLight = chosenLight->getColor() * pathMultiplier * brdfAtPoint / (pdfLight * pdfThisLight);
+	}
+	
+	return fromBRDF + fromLight;
 }
 
 Color raytrace(Ray ray)
@@ -200,38 +234,51 @@ void render()
 		{ 0, 0.6 },
 		{ 0.6, 0.6 },
 	};
-	int numAASamples = COUNT_OF(offsets);
+	int samplesPerPixel = COUNT_OF(offsets);
 	long long lastUpdate = startTicks;
-	int pixelSamples = 1;
-	if (scene.settings.wantAA) pixelSamples = numAASamples;
+	if (!scene.settings.wantAA) samplesPerPixel = 1;
 	if (scene.camera->dof)
-		pixelSamples = max(pixelSamples, scene.camera->numDOFSamples);
+		samplesPerPixel = max(samplesPerPixel, scene.camera->numDOFSamples);
+	if (scene.settings.gi)
+		samplesPerPixel = max(samplesPerPixel, scene.settings.numPaths);
 	Random& rnd = getRandomGen();
+	
+	auto trace = scene.settings.gi ? [] (Ray ray) { return pathtrace(ray, Color(1, 1, 1), getRandomGen()); } :
+			                         [] (Ray ray) { return raytrace(ray); };
+	
 	
 	for (int y = 0; y < frameHeight(); y++) {
 		for (int x = 0; x < frameWidth(); x++) {
 			Color avg(0, 0, 0);
-			for (int i = 0; i < pixelSamples; i++) {
+			for (int i = 0; i < samplesPerPixel; i++) {
 				if (scene.camera->stereoSeparation == 0) {
 					Ray ray;
-					if (scene.camera->dof) {
-						ray = scene.camera->getDOFRay(x + rnd.randfloat(), y + rnd.randfloat());
+					float offsetX, offsetY;
+					if (scene.camera->dof || scene.settings.gi) {
+						offsetX = rnd.randfloat();
+						offsetY = rnd.randfloat();
 					} else {
-						ray = scene.camera->getScreenRay(x + offsets[i][0], y + offsets[i][1]);
+						offsetX = offsets[i][0];
+						offsetY = offsets[i][1];
 					}
-					avg += raytrace(ray);
+					if (scene.camera->dof) {
+						ray = scene.camera->getDOFRay(x + offsetX, y + offsetY);
+					} else {
+						ray = scene.camera->getScreenRay(x + offsetX, y + offsetY);
+					}
+					avg += trace(ray);
 				} else {
 					Ray leftRay, rightRay;
 					leftRay = scene.camera->getScreenRay(x + offsets[i][0], y + offsets[i][1], CAMERA_LEFT);
 					rightRay = scene.camera->getScreenRay(x + offsets[i][0], y + offsets[i][1], CAMERA_RIGHT);
-					Color leftColor = raytrace(leftRay);
-					Color rightColor = raytrace(rightRay);
+					Color leftColor = trace(leftRay);
+					Color rightColor = trace(rightRay);
 					leftColor.adjustSaturation(0.1f);
 					rightColor.adjustSaturation(0.1f);
 					avg += leftColor * scene.camera->leftMask + rightColor * scene.camera->rightMask;
 				}
 			}
-			vfb[y][x] = avg / pixelSamples;
+			vfb[y][x] = avg / samplesPerPixel;
 		}
 		const long long currentTime = getTicks();
 		if (currentTime - lastUpdate > 100) {

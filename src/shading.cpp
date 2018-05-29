@@ -77,6 +77,24 @@ Color Lambert::shade(Ray ray, const IntersectionInfo& info)
 	return shadeResult;
 }
 
+Color Lambert::eval(const IntersectionInfo& x, const Vector& w_in, const Vector& w_out)
+{
+	float cosTerm = max(0.0, dot(x.norm, w_out));
+	return color * (cosTerm / PI);
+}
+
+void Lambert::spawnRay(const IntersectionInfo& x, const Ray& w_in, Ray& w_out, Color& brdfColor, float& pdf)
+{
+	w_out = w_in;
+	w_out.depth++;
+	
+	w_out.start = x.ip + x.norm * 1e-6;
+	w_out.dir = hemisphereSample(x);
+	float cosTerm = max(0.0, dot(x.norm, w_out.dir));
+	brdfColor = color * (cosTerm / PI);
+	pdf = 1 / (2 * PI);
+}
+
 Color Phong::shade(Ray ray, const IntersectionInfo& info)
 {
 	Color diffuseColor = color;
@@ -182,6 +200,27 @@ Color Reflection::shade(Ray ray, const IntersectionInfo& info)
 	}
 }
 
+Color Reflection::eval(const IntersectionInfo& x, const Vector& w_in, const Vector& w_out)
+{
+	// if (w_out == reflect(w_in, x.norm)) then return INFINITY;
+	// else 0;
+	
+	return Color(0, 0, 0);
+}
+
+void Reflection::spawnRay(const IntersectionInfo& x, const Ray& w_in, Ray& w_out, Color& brdfColor, float& pdf)
+{
+	Vector n = faceforward(w_in.dir, x.norm);
+	w_out = w_in;
+	w_out.depth++;
+	w_out.start = x.ip + n * 1e-6;
+	w_out.dir = reflect(w_in.dir, x.norm);
+	float MY_INFINITY = 1e9;
+	brdfColor = mult * MY_INFINITY;
+	pdf = MY_INFINITY;
+}
+
+
 inline float fresnel(const Vector& i, const Vector& n, float ior)
 {
 	// Schlick's approximation
@@ -216,6 +255,42 @@ Color Refraction::shade(Ray ray, const IntersectionInfo& info)
 		return Color(0, 0, 0); // total infernal refraction
 	}	
 }
+
+Color Refraction::eval(const IntersectionInfo& x, const Vector& w_in, const Vector& w_out)
+{
+	return Color(0, 0, 0);
+}
+
+void Refraction::spawnRay(const IntersectionInfo& x, const Ray& w_in, Ray& w_out, Color& brdfColor, float& pdf)
+{
+	Vector n = faceforward(w_in.dir, x.norm);
+	
+	
+	double myIor;
+	if (dot(n, x.norm) > 0) {
+		// n == x.norm
+		myIor = 1.0 / this->ior;
+	} else {
+		// n == -x.norm:
+		myIor = this->ior / 1.0;
+	}
+
+	Vector refracted = refract(w_in.dir, n, myIor);
+	
+	if (!refracted.isZero()) {
+		w_out = w_in;
+		w_out.start = x.ip - n * 1e-6;
+		w_out.dir = refracted;
+		w_out.depth = w_in.depth + 1;
+		float MY_INFINITY = 1e9;
+		brdfColor = mult * MY_INFINITY;
+		pdf = MY_INFINITY;
+	} else {
+		brdfColor.makeZero();
+		pdf = 1.0;
+	}	
+}
+
 
 
 void Layered::addLayer(Shader* shader, Color opacity, Texture* texture)

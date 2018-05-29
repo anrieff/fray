@@ -26,5 +26,6 @@
 #include "vector.h"
 
 bool visible(const Vector& a, const Vector& b);
+Vector hemisphereSample(const IntersectionInfo& info);
 
 Color raytrace(Ray ray);

@@ -105,7 +105,13 @@ public:
 	void beginRender() override;
 };
 
-class Shader: public SceneElement {
+class BRDF {
+public:
+	virtual Color eval(const IntersectionInfo& x, const Vector& w_in, const Vector& w_out) = 0; 
+	virtual void spawnRay(const IntersectionInfo& x, const Ray& w_in, Ray& w_out, Color& brdfColor, float& pdf) = 0; 
+};
+
+class Shader: public SceneElement, public BRDF {
 public:
 	Texture* diffuseTex = nullptr;
 		
@@ -113,6 +119,18 @@ public:
 	ElementType getElementType() const { return ELEM_SHADER; }
 		
 	virtual Color shade(Ray ray, const IntersectionInfo& info) = 0;
+	
+	Color eval(const IntersectionInfo& x, const Vector& w_in, const Vector& w_out) override
+	{
+		return Color(1, 0, 0);
+	}
+	void spawnRay(const IntersectionInfo& x, const Ray& w_in, Ray& w_out, Color& brdfColor, float& pdf) override
+	{
+		w_out = w_in;
+		w_out.depth++;
+		brdfColor = Color(1, 0, 0);
+		pdf = 1;
+	}
 };
 
 
@@ -135,6 +153,8 @@ public:
 	}
 
 	Color shade(Ray ray, const IntersectionInfo& info) override;
+	Color eval(const IntersectionInfo& x, const Vector& w_in, const Vector& w_out) override;
+	void spawnRay(const IntersectionInfo& x, const Ray& w_in, Ray& w_out, Color& brdfColor, float& pdf) override;
 };
 
 class Phong: public Shader {
@@ -157,10 +177,10 @@ public:
 };
 
 class Reflection: public Shader {
-	double deflectionScaling;
-	double glossiness;
-	bool pureReflection;
-	int numSamples;
+	double deflectionScaling = 0;
+	double glossiness = 1.0;
+	bool pureReflection = false;
+	int numSamples = 10;
 public:
 	Color mult = Color(1, 1, 1); // typically Color(0.98, 0.98, 0.98)
 	
@@ -180,6 +200,8 @@ public:
 	}
 	
 	Color shade(Ray ray, const IntersectionInfo& info) override;
+	Color eval(const IntersectionInfo& x, const Vector& w_in, const Vector& w_out) override;
+	void spawnRay(const IntersectionInfo& x, const Ray& w_in, Ray& w_out, Color& brdfColor, float& pdf) override;
 };
 
 class Refraction: public Shader {
@@ -197,6 +219,8 @@ public:
 	
 				
 	Color shade(Ray ray, const IntersectionInfo& info) override;
+	Color eval(const IntersectionInfo& x, const Vector& w_in, const Vector& w_out) override;
+	void spawnRay(const IntersectionInfo& x, const Ray& w_in, Ray& w_out, Color& brdfColor, float& pdf) override;
 };
 
 class FresnelTexture: public Texture {

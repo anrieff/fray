@@ -1,11 +1,12 @@
 
 GlobalSettings {
-	frameWidth          640
-	frameHeight         640
+	frameWidth          400
+	frameHeight         400
 	ambientLight        (0.15, 0.15, 0.15)
 	maxTraceDepth 6
-	gi            0
+	gi            1
 	wantAA false
+	pathsPerPixel 200
 }
 
 Camera camera {
@@ -31,9 +32,9 @@ RectLight {
 	color (1, 0.85, 0.43)
 	
 	// Power (for DI):
-	power 9.15750915751
+	//power 9.15750915751
 	// Power (for GI):
-	//power 27.472527472530004       // x3
+	power 27.472527472530004       // x3
 }
 
 //////////////////////// GEOMETRIES ////////////////////////////////////////
@@ -108,9 +109,13 @@ Node leftwall {
 	shader red
 }
 
+Refl mirror {
+	multiplier 0.9
+}
+
 Node shortblock {
 	geometry mesh_shortblock
-	shader white
+	shader mirror
 }
 
 Node tallblock {

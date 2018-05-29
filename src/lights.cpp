@@ -99,3 +99,8 @@ bool RectLight::intersect(Ray ray, IntersectionInfo& info)
 
 	return true;
 }
+
+double RectLight::solidAngle(const IntersectionInfo& x) 
+{
+	return 2*PI / (x.ip - center).lengthSqr();
+}

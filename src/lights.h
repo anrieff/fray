@@ -42,6 +42,8 @@ public:
 	virtual void getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color) = 0;
 	
 	virtual Color getColor() { return color * power; }
+	
+	virtual double solidAngle(const IntersectionInfo& x) { return 0; }
 
 	void fillProperties(ParsedBlock& pb)
 	{
@@ -91,4 +93,6 @@ public:
 	void getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color) override;
 
 	bool intersect(Ray ray, IntersectionInfo& info) override;
+	
+	double solidAngle(const IntersectionInfo& x) override;
 };
