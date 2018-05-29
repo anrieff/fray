@@ -42,7 +42,7 @@ public:
 	virtual ~Intersectable() {}
 	
 	/// returns true if the ray intersects the geometry
-	virtual bool intersect(Ray ray, IntersectionInfo& info) = 0;
+	virtual bool intersect(const Ray& ray, IntersectionInfo& info) = 0;
 };
 
 class Geometry: public Intersectable, public SceneElement {
@@ -62,7 +62,7 @@ public:
 		pb.getDoubleProp("limit", &limit);
 	}
 	
-	bool intersect(Ray ray, IntersectionInfo& info) override;
+	bool intersect(const Ray& ray, IntersectionInfo& info) override;
 };
 
 class Sphere: public Geometry {
@@ -82,11 +82,11 @@ public:
 		pb.getDoubleProp("R", &R);
 	}
 	
-	bool intersect(Ray ray, IntersectionInfo& info) override;
+	bool intersect(const Ray& ray, IntersectionInfo& info) override;
 };
 
 class Cube: public Geometry {
-	void intersectCubeSide(Ray ray, double start, double dir, double target,
+	void intersectCubeSide(const Ray& ray, double start, double dir, double target,
 							const Vector& normal, IntersectionInfo& info,
 							std::function<void(const Vector&)> uv_mapping);
 
@@ -106,7 +106,7 @@ public:
 		pb.getDoubleProp("halfSide", &halfSide);
 	}
 	
-	bool intersect(Ray ray, IntersectionInfo& info) override;
+	bool intersect(const Ray& ray, IntersectionInfo& info) override;
 	
 };
 
@@ -125,7 +125,7 @@ public:
 		pb.getGeometryProp("right", &right);
 	}
 	
-	bool intersect(Ray ray, IntersectionInfo& info) override;
+	bool intersect(const Ray& ray, IntersectionInfo& info) override;
 };
 
 class CsgPlus: public CsgOp {
@@ -161,7 +161,7 @@ struct Node: public Intersectable, public SceneElement {
 	Texture* bump = nullptr;
 
 	// from Intersectable:
-	bool intersect(Ray ray, IntersectionInfo& info) override;
+	bool intersect(const Ray& ray, IntersectionInfo& info) override;
 
 	// from SceneElement:
 	ElementType getElementType() const { return ELEM_NODE; }

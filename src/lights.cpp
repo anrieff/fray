@@ -75,7 +75,7 @@ void RectLight::getNthSample(int sampleIdx, const Vector& shadePos, Vector& samp
 	samplePos = T.transformPoint(pointOnLight);
 }
 
-bool RectLight::intersect(Ray ray, IntersectionInfo& info)
+bool RectLight::intersect(const Ray& ray, IntersectionInfo& info)
 {
 	Ray rayLocal;
 	rayLocal.start = T.untransformPoint(ray.start);

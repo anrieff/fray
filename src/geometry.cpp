@@ -26,7 +26,7 @@
 #include <algorithm>
 using namespace std;
 
-bool Plane::intersect(Ray ray, IntersectionInfo& info)
+bool Plane::intersect(const Ray& ray, IntersectionInfo& info)
 {
 	if (ray.start.y > height && ray.dir.y >= 0) return false;
 	if (ray.start.y < height && ray.dir.y <= 0) return false;
@@ -48,7 +48,7 @@ bool Plane::intersect(Ray ray, IntersectionInfo& info)
 	return true;
 }
 
-bool Sphere::intersect(Ray ray, IntersectionInfo& info)
+bool Sphere::intersect(const Ray& ray, IntersectionInfo& info)
 {
 	// p^2 * ray.dir.length^2 + p * (2 * dot(ray.dir, H)) + (H.length^2 - R^2) = 0
 	
@@ -81,7 +81,7 @@ bool Sphere::intersect(Ray ray, IntersectionInfo& info)
 	return true;
 }
 
-void Cube::intersectCubeSide(Ray ray, double start, double dir, double target, const Vector& normal,
+void Cube::intersectCubeSide(const Ray& ray, double start, double dir, double target, const Vector& normal,
 							IntersectionInfo& info, std::function<void (const Vector&)> uv_mapping)
 {
 	if (fabs(dir) < 1e-9) return;
@@ -107,7 +107,7 @@ void Cube::intersectCubeSide(Ray ray, double start, double dir, double target, c
 	}
 }
 
-bool Cube::intersect(Ray ray, IntersectionInfo& info)
+bool Cube::intersect(const Ray& ray, IntersectionInfo& info)
 {
 	info.dist = 1e99;
 	
@@ -135,9 +135,10 @@ bool Cube::intersect(Ray ray, IntersectionInfo& info)
 	}
 }
 
-vector<IntersectionInfo> findAllIntersections(Ray ray, Geometry* g)
+vector<IntersectionInfo> findAllIntersections(const Ray& _ray, Geometry* g)
 {
 	vector<IntersectionInfo> result;
+	Ray ray = _ray;
 	
 	int counter = 30;
 	Vector origin = ray.start;
@@ -155,7 +156,7 @@ vector<IntersectionInfo> findAllIntersections(Ray ray, Geometry* g)
 	return result;
 }
 
-bool CsgOp::intersect(Ray ray, IntersectionInfo& info)
+bool CsgOp::intersect(const Ray& ray, IntersectionInfo& info)
 {
 	vector<IntersectionInfo>
 		leftIntersections = findAllIntersections(ray, left),
@@ -191,7 +192,7 @@ bool CsgOp::intersect(Ray ray, IntersectionInfo& info)
 	return false;
 }
 
-bool Node::intersect(Ray ray, IntersectionInfo& info)
+bool Node::intersect(const Ray& ray, IntersectionInfo& info)
 {
 	Ray localRay = ray;
 	localRay.start = T.untransformPoint(ray.start);

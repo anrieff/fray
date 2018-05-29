@@ -64,7 +64,7 @@ public:
 
 	int getNumSamples() { return 1; }
 	
-	bool intersect(Ray ray, IntersectionInfo& info) override
+	bool intersect(const Ray& ray, IntersectionInfo& info) override
 	{
 		return false;
 	}
@@ -92,7 +92,7 @@ public:
 	
 	void getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color) override;
 
-	bool intersect(Ray ray, IntersectionInfo& info) override;
+	bool intersect(const Ray& ray, IntersectionInfo& info) override;
 	
 	double solidAngle(const IntersectionInfo& x) override;
 };

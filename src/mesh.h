@@ -95,5 +95,5 @@ public:
 
 	void beginRender() override;
 
-	bool intersect(Ray ray, IntersectionInfo& info) override;
+	bool intersect(const Ray& ray, IntersectionInfo& info) override;
 };

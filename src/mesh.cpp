@@ -140,7 +140,7 @@ bool Mesh::intersectTriangle(const Ray& ray, const Triangle& T, IntersectionInfo
 }
 
 
-bool Mesh::intersect(Ray ray, IntersectionInfo& info)
+bool Mesh::intersect(const Ray& ray, IntersectionInfo& info)
 {
 	if (!bbox.testIntersect(ray))
 		return false;
