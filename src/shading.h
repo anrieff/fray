@@ -42,7 +42,7 @@ class CheckerTexture: public Texture {
 public:
 	Color color1 = Color(0.7, 0.7, 0.7);
 	Color color2 = Color(0.2, 0.2, 0.2);
-	double scaling = 0.05;
+	double scaling = 1;
 
 	void fillProperties(ParsedBlock& pb)
 	{

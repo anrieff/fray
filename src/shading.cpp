@@ -37,8 +37,8 @@ Color ConstantShader::shade(Ray ray, const IntersectionInfo& info)
 
 Color CheckerTexture::sample(Ray ray, const IntersectionInfo& info)
 {
-	int integerX = int(floor(info.u * scaling)); // 5.5 -> 5
-	int integerY = int(floor(info.v * scaling)); // -3.2 -> -4
+	int integerX = int(floor(info.u * scaling) / 5.0); // 5.5 -> 5
+	int integerY = int(floor(info.v * scaling) / 5.0); // -3.2 -> -4
 	
 	return ((integerX + integerY) % 2 == 0) ? color1 : color2;
 }

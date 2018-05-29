@@ -113,6 +113,17 @@ int frameHeight(void)
 	return 0;
 }
 
+void setWindowCaption(const char* msg, float renderTime)
+{
+	if (renderTime >= 0) {
+		char message[128];
+		sprintf(message, msg, renderTime);
+		SDL_WM_SetCaption(message, NULL);
+	} else {
+		SDL_WM_SetCaption(msg, NULL);
+	}
+}
+
 // find an unused file name like 'fray_0005.bmp'
 static void findUnusedFN(char fn[], const char* suffix)
 {

@@ -6,7 +6,8 @@ GlobalSettings {
 	frameHeight         768
 	ambientLight        (0.28, 0.30, 0.35)
 	maxTraceDepth		5
-	wantAA				true
+	wantAA				off
+	saturation 0.1
 }
 
 PointLight {
@@ -163,7 +164,7 @@ Node ball3 {
 	shader ball_sfc
 	translate (126.2, 12.5, 79.5)
 }
-
+*/
 Node wineglass {
 	geometry wineglass
 	//shader	white_flat
@@ -171,7 +172,7 @@ Node wineglass {
 	translate (126, 0, 80)
 	scale (17, 17, 17)
 }
-*/
+
 Node dice {
 	geometry   dice
 	shader     flat

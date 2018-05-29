@@ -41,7 +41,7 @@
 using namespace std;
 
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE];
-char sceneFile[256] = "data/smallpt.fray";
+char sceneFile[256] = "data/forest.fray";
 
 bool visible(const Vector& a, const Vector& b)
 {
@@ -152,7 +152,7 @@ Color explicitLightSample(const Ray& ray, const IntersectionInfo& info, const Co
 
 Color pathtrace(Ray ray, Color pathMultiplier, Random& rnd)
 {
-	if (ray.depth > MAX_TRACE_DEPTH ||
+	if (ray.depth > scene.settings.maxTraceDepth ||
 		pathMultiplier.intensity() < 0.01 
 		)
 		return Color(0, 0, 0);
@@ -227,7 +227,7 @@ Color pathtrace(Ray ray, Color pathMultiplier, Random& rnd)
 
 Color raytrace(Ray ray)
 {
-	if (ray.depth > MAX_TRACE_DEPTH) return Color(0, 0, 0);
+	if (ray.depth > scene.settings.maxTraceDepth) return Color(0, 0, 0);
 	
 	Node* closestNode = nullptr;
 	IntersectionInfo closestIntersection;
@@ -331,8 +331,6 @@ void render()
 	
 	vector<Rect> buckets = getBucketsList();
 	
-	const long long startTicks = getTicks();
-	
 	const double offsets[5][2] = {
 		{ 0, 0 }, 
 		{ 0.6, 0 },
@@ -371,9 +369,6 @@ void render()
 		}
 		if (!displayVFBRect(r, vfb)) return;
 	}
-	unsigned elapsed = getTicks() - startTicks;
-	
-	printf("Frame took %d ms\n", elapsed);
 }
 
 int renderSceneThread(void* /*unused*/)
@@ -413,7 +408,12 @@ int main(int argc, char** argv)
 	scene.parseScene(sceneFile);
 	initGraphics(scene.settings.frameWidth, scene.settings.frameHeight);
 	scene.beginRender();
+	setWindowCaption("fray: rendering...");
+	Uint32 startTicks = getTicks();
 	renderScene_threaded();
+	Uint32 elapsedMs = getTicks() - startTicks;
+	printf("Render took %.2fs\n", elapsedMs / 1000.0f);
+	setWindowCaption("fray: rendered in %.2fs\n", elapsedMs / 1000.0f);
 	displayVFB(vfb);
 	if (!wantToQuit) waitForUserExit();
 	closeGraphics();
