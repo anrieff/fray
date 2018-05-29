@@ -35,7 +35,7 @@ public:
 	
 	ElementType getElementType() const { return ELEM_TEXTURE; }
 	
-	virtual Color sample(Ray ray, const IntersectionInfo& info) = 0;
+	virtual Color sample(const Ray& ray, const IntersectionInfo& info) = 0;
 };
 
 class CheckerTexture: public Texture {
@@ -53,7 +53,7 @@ public:
 		
 	CheckerTexture() {}	
 	CheckerTexture(const Color& color1, const Color& color2): color1(color1), color2(color2) {}
-	Color sample(Ray ray, const IntersectionInfo& info) override;
+	Color sample(const Ray& ray, const IntersectionInfo& info) override;
 };
 
 class BitmapTexture: public Texture {
@@ -68,7 +68,7 @@ public:
 			pb.requiredProp("file");
 	}
 	
-	Color sample(Ray ray, const IntersectionInfo& info) override;
+	Color sample(const Ray& ray, const IntersectionInfo& info) override;
 };
 
 struct BumpMapperInterface {
@@ -98,7 +98,7 @@ public:
 		if (id == BumpMapperInterface::ID) return (BumpMapperInterface*) this;
 		return nullptr;
 	}
-	Color sample(Ray ray, const IntersectionInfo& info);
+	Color sample(const Ray& ray, const IntersectionInfo& info);
 	void getDeflection(const IntersectionInfo& info, float& dx, float& dy) override;
 	void modifyNormal(IntersectionInfo& info) override;
 	
@@ -118,7 +118,7 @@ public:
 	virtual ~Shader() {}
 	ElementType getElementType() const { return ELEM_SHADER; }
 		
-	virtual Color shade(Ray ray, const IntersectionInfo& info) = 0;
+	virtual Color shade(const Ray& ray, const IntersectionInfo& info) = 0;
 	
 	Color eval(const IntersectionInfo& x, const Vector& w_in, const Vector& w_out) override
 	{
@@ -139,7 +139,7 @@ class ConstantShader: public Shader {
 public:
 	Color color = Color(1, 0, 0);
 	
-	Color shade(Ray ray, const IntersectionInfo& info) override;
+	Color shade(const Ray& ray, const IntersectionInfo& info) override;
 };
 
 class Lambert: public Shader {
@@ -152,7 +152,7 @@ public:
 		pb.getTextureProp("texture", &diffuseTex);
 	}
 
-	Color shade(Ray ray, const IntersectionInfo& info) override;
+	Color shade(const Ray& ray, const IntersectionInfo& info) override;
 	Color eval(const IntersectionInfo& x, const Vector& w_in, const Vector& w_out) override;
 	void spawnRay(const IntersectionInfo& x, const Ray& w_in, Ray& w_out, Color& brdfColor, float& pdf) override;
 };
@@ -173,7 +173,7 @@ public:
 		pb.getColorProp("specularColor", &specularColor);
 	}
 	
-	Color shade(Ray ray, const IntersectionInfo& info) override;
+	Color shade(const Ray& ray, const IntersectionInfo& info) override;
 };
 
 class Reflection: public Shader {
@@ -199,7 +199,7 @@ public:
 		deflectionScaling = pow(10.0, 2 - 4*glossiness);		
 	}
 	
-	Color shade(Ray ray, const IntersectionInfo& info) override;
+	Color shade(const Ray& ray, const IntersectionInfo& info) override;
 	Color eval(const IntersectionInfo& x, const Vector& w_in, const Vector& w_out) override;
 	void spawnRay(const IntersectionInfo& x, const Ray& w_in, Ray& w_out, Color& brdfColor, float& pdf) override;
 };
@@ -218,7 +218,7 @@ public:
 	}
 	
 				
-	Color shade(Ray ray, const IntersectionInfo& info) override;
+	Color shade(const Ray& ray, const IntersectionInfo& info) override;
 	Color eval(const IntersectionInfo& x, const Vector& w_in, const Vector& w_out) override;
 	void spawnRay(const IntersectionInfo& x, const Ray& w_in, Ray& w_out, Color& brdfColor, float& pdf) override;
 };
@@ -232,7 +232,7 @@ public:
 		pb.getDoubleProp("ior", &ior, 1e-6, 10);
 	}
 
-	Color sample(Ray ray, const IntersectionInfo& info) override;	
+	Color sample(const Ray& ray, const IntersectionInfo& info) override;	
 };
 
 class Layered: public Shader {
@@ -250,5 +250,5 @@ public:
 	// #1 is directly above it, and so forth:
 	void addLayer(Shader* shader, Color opacity = Color(1, 1, 1), Texture* texture = nullptr);
 	
-	Color shade(Ray ray, const IntersectionInfo& info) override;
+	Color shade(const Ray& ray, const IntersectionInfo& info) override;
 };

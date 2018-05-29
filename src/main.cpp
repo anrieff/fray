@@ -150,7 +150,7 @@ Color explicitLightSample(const Ray& ray, const IntersectionInfo& info, const Co
 	return     L       *   pathMultiplier * brdfAtPoint / chooseLightProb;
 }
 
-Color pathtrace(Ray ray, Color pathMultiplier, Random& rnd)
+Color pathtrace(const Ray& ray, Color pathMultiplier, Random& rnd)
 {
 	if (ray.depth > scene.settings.maxTraceDepth ||
 		pathMultiplier.intensity() < 0.01 
@@ -225,7 +225,7 @@ Color pathtrace(Ray ray, Color pathMultiplier, Random& rnd)
 	return contribLight + contribGI;
 }
 
-Color raytrace(Ray ray)
+Color raytrace(const Ray& ray)
 {
 	if (ray.depth > scene.settings.maxTraceDepth) return Color(0, 0, 0);
 	
@@ -271,7 +271,7 @@ Color raytrace(double x, double y)
 	return raytrace(scene.camera->getScreenRay(x, y));
 }
 
-Color trace(Ray ray, Random& rnd)
+Color trace(const Ray& ray, Random& rnd)
 {
 	if (scene.settings.gi) {
 		return pathtrace(ray, Color(1, 1, 1), rnd);
@@ -304,7 +304,7 @@ Color raytraceSinglePixel(double x, double y)
 		return  colorLeft * scene.camera->leftMask
 		      + colorRight* scene.camera->rightMask;
 	} else {
-		Ray ray = getRay(x, y, CAMERA_CENTER);
+		const Ray& ray = getRay(x, y, CAMERA_CENTER);
 		return trace(ray, rnd);
 	}
 }

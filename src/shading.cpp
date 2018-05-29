@@ -30,12 +30,12 @@
 using namespace std;
 
 
-Color ConstantShader::shade(Ray ray, const IntersectionInfo& info)
+Color ConstantShader::shade(const Ray& ray, const IntersectionInfo& info)
 {
 	return color;
 }
 
-Color CheckerTexture::sample(Ray ray, const IntersectionInfo& info)
+Color CheckerTexture::sample(const Ray& ray, const IntersectionInfo& info)
 {
 	int integerX = int(floor(info.u * scaling) / 5.0); // 5.5 -> 5
 	int integerY = int(floor(info.v * scaling) / 5.0); // -3.2 -> -4
@@ -43,7 +43,7 @@ Color CheckerTexture::sample(Ray ray, const IntersectionInfo& info)
 	return ((integerX + integerY) % 2 == 0) ? color1 : color2;
 }
 
-Color Lambert::shade(Ray ray, const IntersectionInfo& info)
+Color Lambert::shade(const Ray& ray, const IntersectionInfo& info)
 {
 	Color diffuseColor = color;
 	if (diffuseTex) diffuseColor *= diffuseTex->sample(ray, info);
@@ -96,7 +96,7 @@ void Lambert::spawnRay(const IntersectionInfo& x, const Ray& w_in, Ray& w_out, C
 	pdf = 1 / (2 * PI);
 }
 
-Color Phong::shade(Ray ray, const IntersectionInfo& info)
+Color Phong::shade(const Ray& ray, const IntersectionInfo& info)
 {
 	Color diffuseColor = color;
 	if (diffuseTex) diffuseColor *= diffuseTex->sample(ray, info);
@@ -142,7 +142,7 @@ Color Phong::shade(Ray ray, const IntersectionInfo& info)
 }
 
 
-Color BitmapTexture::sample(Ray ray, const IntersectionInfo& info)
+Color BitmapTexture::sample(const Ray& ray, const IntersectionInfo& info)
 {
 	int int_x = int(floor(info.u * scaling * bmp.getWidth()));
 	int int_y = int(floor(info.v * scaling * bmp.getHeight()));
@@ -155,7 +155,7 @@ Color BitmapTexture::sample(Ray ray, const IntersectionInfo& info)
 	return bmp.getPixel(int_x, int_y);
 }
 
-Color Reflection::shade(Ray ray, const IntersectionInfo& info)
+Color Reflection::shade(const Ray& ray, const IntersectionInfo& info)
 {
 	Vector n = faceforward(ray.dir, info.norm);
 	
@@ -232,7 +232,7 @@ inline float fresnel(const Vector& i, const Vector& n, float ior)
 	return f + (1.0f - f) * pow(1.0f - NdotI, 5.0f);
 }
 
-Color Refraction::shade(Ray ray, const IntersectionInfo& info)
+Color Refraction::shade(const Ray& ray, const IntersectionInfo& info)
 {
 	Vector n = faceforward(ray.dir, info.norm);
 	
@@ -351,7 +351,7 @@ void Layered::fillProperties(ParsedBlock& pb)
 	}
 }
 
-Color Layered::shade(Ray ray, const IntersectionInfo& info)
+Color Layered::shade(const Ray& ray, const IntersectionInfo& info)
 {
 	Color result(0, 0, 0);
 	for (int i = 0; i < numLayers; i++) {
@@ -363,7 +363,7 @@ Color Layered::shade(Ray ray, const IntersectionInfo& info)
 	return result;
 }
 
-Color FresnelTexture::sample(Ray ray, const IntersectionInfo& info)
+Color FresnelTexture::sample(const Ray& ray, const IntersectionInfo& info)
 {
 	Vector n;
 	double myIor;
@@ -386,7 +386,7 @@ void BumpTexture::beginRender()
 	bumpTex.differentiate();
 }
 
-Color BumpTexture::sample(Ray ray, const IntersectionInfo& info)
+Color BumpTexture::sample(const Ray& ray, const IntersectionInfo& info)
 {
 	return Color(0, 0, 0);
 }
