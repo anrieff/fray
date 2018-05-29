@@ -6,7 +6,7 @@ GlobalSettings {
 	maxTraceDepth 6
 	gi            1
 	wantAA false
-	pathsPerPixel 200
+	pathsPerPixel 40
 }
 
 Camera camera {

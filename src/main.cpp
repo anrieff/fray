@@ -96,6 +96,59 @@ Vector hemisphereSample(const IntersectionInfo& info)
 		return -dir;
 }
 
+Color explicitLightSample(const Ray& ray, const IntersectionInfo& info, const Color& pathMultiplier, Shader* shader, Random& rnd)
+{
+	// try to end a path by explicitly sampling a light. If there are no lights, we can't do that:
+	if (scene.lights.empty()) return Color(0, 0, 0);
+
+	// choose a random light:
+	int lightIdx = rnd.randint(0, scene.lights.size() - 1);
+	Light* chosenLight = scene.lights[lightIdx];
+
+	// evaluate light's solid angle as viewed from the intersection point, x:
+	Vector x = info.ip;
+	double solidAngle = chosenLight->solidAngle(info);
+
+	// is light is too small or invisible?
+	if (solidAngle == 0) return Color(0, 0, 0);
+
+	// choose a random point on the light:
+	int samplesInLight = chosenLight->getNumSamples();
+	int randSample = rnd.randint(0, samplesInLight - 1);
+
+	Vector pointOnLight;
+	Color unused;
+	chosenLight->getNthSample(randSample, x, pointOnLight, unused);
+
+	// camera -> ... path ... -> x -> lightPos
+	//                       are x and lightPos visible?
+	if (!visible(x + info.norm * 1e-6, pointOnLight))
+		return Color(0, 0, 0);
+
+	// get the emitted light energy (color * power):
+	Color L = chosenLight->getColor();
+
+
+	// evaluate BRDF. It might be zero (e.g., pure reflection), so bail out early if that's the case
+	Vector w_out = pointOnLight - x;
+	w_out.normalize();
+	Color brdfAtPoint = shader->eval(info, ray.dir, w_out);
+	if (brdfAtPoint.intensity() == 0) return Color(0, 0, 0);
+
+	// probability to hit this light's projection on the hemisphere
+	// (conditional probability, since we're specifically aiming for this light):
+	float probHitLightArea = 1.0f / solidAngle;
+
+	// probability to pick this light out of all N lights:
+	float probPickThisLight = 1.0f / scene.lights.size();
+
+	// combined probability of this generated w_out ray:
+	float chooseLightProb = probHitLightArea * probPickThisLight;
+
+	/* Light flux (Li) */ /* BRDFs@path*/  /*last BRDF*/ /*MC probability*/
+	return     L       *   pathMultiplier * brdfAtPoint / chooseLightProb;
+}
+
 Color pathtrace(Ray ray, Color pathMultiplier, Random& rnd)
 {
 	if (ray.depth > MAX_TRACE_DEPTH ||
@@ -146,35 +199,24 @@ Color pathtrace(Ray ray, Color pathMultiplier, Random& rnd)
 	float rayPdf;
 	closestNode->shader->spawnRay(closestIntersection, ray, newRay, brdfColor, rayPdf);
 	
-	// Kajiya ("sampling the BRDF"):
-	Color fromBRDF = pathtrace(newRay, pathMultiplier * (brdfColor / rayPdf), rnd);
-	
-	int numLights = scene.lights.size();
-	int chosenLightIdx = rnd.randint(0, numLights - 1);
-	
-	Light* chosenLight = scene.lights[chosenLightIdx];
-	int numPoints = chosenLight->getNumSamples();
-	
-	int sampleIdx = rnd.randint(0, numPoints - 1);
-	
-	Vector lightPoint;
-	Color lightColor;
-	chosenLight->getNthSample(sampleIdx, closestIntersection.ip, lightPoint, lightColor);
-	
-	double solidAngle = chosenLight->solidAngle(closestIntersection);
-	
-	Color fromLight(0, 0, 0);
-	
-	if (solidAngle > 0 && visible(closestIntersection.ip + closestIntersection.norm * 1e-6, lightPoint)) {
-		float pdfLight = 1 / solidAngle;
-		float pdfThisLight = 1 / double(numLights);
-		Vector toLight = (lightPoint - closestIntersection.ip);
-		toLight.normalize();
-		Color brdfAtPoint = closestNode->shader->eval(closestIntersection, -ray.dir, toLight);
-		fromLight = chosenLight->getColor() * pathMultiplier * brdfAtPoint / (pdfLight * pdfThisLight);
-	}
-	
-	return fromBRDF + fromLight;
+	// ("sampling the light"):
+	// try to end the current path with explicit sampling of some light
+	Color contribLight = explicitLightSample(ray, closestIntersection, pathMultiplier,
+											closestNode->shader, rnd);
+	// ("sampling the BRDF"):
+	// also try to extend the current path randomly:
+	Ray w_out = ray;
+	w_out.depth++;
+	Color brdf;
+	float pdf;
+	closestNode->shader->spawnRay(closestIntersection, ray, w_out, brdf, pdf);
+
+	if (pdf == -1) return Color(1, 0, 0); // BRDF not implemented
+	if (pdf == 0) return Color(0, 0, 0);  // BRDF is zero
+
+
+	Color contribGI = pathtrace(w_out, pathMultiplier * brdf / pdf, rnd);
+	return contribLight + contribGI;
 }
 
 Color raytrace(Ray ray)
