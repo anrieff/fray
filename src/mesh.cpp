@@ -104,10 +104,8 @@ bool Mesh::intersectTriangle(const Ray& ray, const Triangle& T, IntersectionInfo
 	// backface culling?
 	if (backfaceCulling && dot(ray.dir, T.gnormal) > 0) return false;
 	const Vector& A = vertices[T.v[0]];
-	const Vector& B = vertices[T.v[1]];
-	const Vector& C = vertices[T.v[2]];
 
-	if (T.intersect(ray, A, B, C, info.dist, lambda2, lambda3)) {
+	if (T.intersectFast(ray, A, info.dist, lambda2, lambda3)) {
 		info.geom = this;
 		info.ip = ray.start + ray.dir * info.dist;
 		if (faceted || normals.empty()) {
@@ -279,6 +277,9 @@ void Mesh::prepareTriangles()
 		Vector AB = B - A;
 		Vector AC = C - A;
 		t.gnormal = AB ^ AC;
+		t.AB = AB;
+		t.AC = AC;
+		t.ABcrossAC = t.gnormal;
 		t.gnormal.normalize();
 		
 		if (!uvs.empty() && !normals.empty()) {

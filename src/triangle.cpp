@@ -39,15 +39,49 @@ bool Triangle::intersect(Ray ray, const Vector& A, const Vector& B, const Vector
 	double Dcr = det(AB, AC, D);
 	
 	if (fabs(Dcr) < 1e-12) return false;
+	double rDcr = 1 / Dcr;
 	
 	Vector H = ray.start - A;
 	
-	double lambda2 = det(H, AC, D) / Dcr;
-	double lambda3 = det(AB, H, D) / Dcr;
-	double gamma   = det(AB, AC, H) / Dcr;
-	
+	double gamma   = det(AB, AC, H) * rDcr;
 	if (gamma < 0 || gamma > minDist) return false;
-	if (lambda2 < 0 || lambda2 > 1 || lambda3 < 0 || lambda3 > 1) return false;
+
+	double lambda2 = det(H, AC, D) * rDcr;
+	if (lambda2 < 0 || lambda2 > 1) return false;
+	
+	double lambda3 = det(AB, H, D) * rDcr;
+	
+	if (lambda3 < 0 || lambda3 > 1) return false;
+	
+	double lambda1 = 1 - (lambda2 + lambda3);
+	if (lambda1 < 0) return false;
+	
+	minDist = gamma;
+	l2 = lambda2;
+	l3 = lambda3;
+	return true;
+}
+
+bool Triangle::intersectFast(Ray ray, const Vector& A, double& minDist, double& l2, double& l3) const
+{
+	Vector D = -ray.dir;
+	
+	double Dcr = dot(ABcrossAC, D);
+	
+	if (fabs(Dcr) < 1e-12) return false;
+	double rDcr = 1 / Dcr;
+	
+	Vector H = ray.start - A;
+	
+	double gamma   = dot(ABcrossAC, H) * rDcr;
+	if (gamma < 0 || gamma > minDist) return false;
+
+	double lambda2 = det(H, AC, D) * rDcr;
+	if (lambda2 < 0 || lambda2 > 1) return false;
+	
+	double lambda3 = det(AB, H, D) * rDcr;
+	
+	if (lambda3 < 0 || lambda3 > 1) return false;
 	
 	double lambda1 = 1 - (lambda2 + lambda3);
 	if (lambda1 < 0) return false;

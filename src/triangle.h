@@ -32,7 +32,9 @@ struct Triangle {
 	int t[3]; //!< holds indices to the three texture coordinates of the triangle (indexes in the `uvs' array)
 	Vector gnormal; //!< The geometric normal of the mesh (AB ^ AC, normalized)
 	Vector dNdx, dNdy; //!< tangent and binormal vectors for this triangle
+	Vector AB, AC, ABcrossAC;
 
 	static bool intersect(Ray ray, const Vector& A, const Vector& B, const Vector& C, double& minDist,
 						  double& l2, double& l3);
+	bool intersectFast(Ray ray, const Vector& A, double& minDist, double& l2, double& l3) const;
 };
