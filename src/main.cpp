@@ -180,7 +180,12 @@ Color pathtrace(Ray ray, Color pathMultiplier, Random& rnd)
 	}
 	
 	if (hitLight) {
-		return intersectedLight->getColor() * pathMultiplier;
+		if (ray.flags & RF_DIFFUSE) {
+			// forbid light contributions after a diffuse reflection
+			return Color(0, 0, 0);
+		} else {
+			return intersectedLight->getColor() * pathMultiplier;
+		}
 	}
 	
 	if (!closestNode) {

@@ -90,6 +90,7 @@ void Lambert::spawnRay(const IntersectionInfo& x, const Ray& w_in, Ray& w_out, C
 	
 	w_out.start = x.ip + x.norm * 1e-6;
 	w_out.dir = hemisphereSample(x);
+	w_out.flags |= RF_DIFFUSE;
 	float cosTerm = max(0.0, dot(x.norm, w_out.dir));
 	brdfColor = color * (cosTerm / PI);
 	pdf = 1 / (2 * PI);
@@ -215,9 +216,11 @@ void Reflection::spawnRay(const IntersectionInfo& x, const Ray& w_in, Ray& w_out
 	w_out.depth++;
 	w_out.start = x.ip + n * 1e-6;
 	w_out.dir = reflect(w_in.dir, x.norm);
+	w_out.flags &= ~RF_DIFFUSE;
 	float MY_INFINITY = 1e9;
 	brdfColor = mult * MY_INFINITY;
 	pdf = MY_INFINITY;
+	w_out.flags &= ~RF_DIFFUSE;
 }
 
 
@@ -282,6 +285,7 @@ void Refraction::spawnRay(const IntersectionInfo& x, const Ray& w_in, Ray& w_out
 		w_out.start = x.ip - n * 1e-6;
 		w_out.dir = refracted;
 		w_out.depth = w_in.depth + 1;
+		w_out.flags &= ~RF_DIFFUSE;
 		float MY_INFINITY = 1e9;
 		brdfColor = mult * MY_INFINITY;
 		pdf = MY_INFINITY;

@@ -233,12 +233,18 @@ inline void randomUnitDiscPoint(double& x, double& y)
 	}
 }
 
+enum {
+	RF_DEBUG = 1,
+	
+	RF_DIFFUSE = 2,
+};
 
 /// @class Ray
 struct Ray {
 	Vector start;
 	Vector dir; // unit vector!
 	int depth = 0;
+	unsigned flags = 0;
 	
 	Ray() {}
 	Ray(const Vector& start, const Vector& dir): start(start), dir(dir) {}
