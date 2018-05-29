@@ -40,6 +40,19 @@ enum class Axis {
 	AXIS_NONE,
 };
 
+struct RRay: Ray {
+	// Ray with rdir; used for quicker intersection tests
+	Vector rdir;
+	RRay() {}
+	explicit RRay(const Ray& r): Ray(r) {}
+	void prepareForTracing()
+	{
+		rdir.x = fabs(dir.x) > 1e-12 ? 1.0 / dir.x : 1e12;
+		rdir.y = fabs(dir.y) > 1e-12 ? 1.0 / dir.y : 1e12;
+		rdir.z = fabs(dir.z) > 1e-12 ? 1.0 / dir.z : 1e12;
+	}
+};
+
 /**
  * @Brief a class that represents an axis-aligned bounding box around some object
  * The more precise definition of our BBox is the volume, bounded by the vectors vmin, vmax, so that any point p inside the volume satisfies
@@ -70,13 +83,13 @@ struct BBox {
 	}
 	/// Test for ray-box intersection
 	/// @returns true if an intersection exists; false otherwise.
-	inline bool testIntersect(const Ray& ray) const
+	inline bool testIntersect(const RRay& ray) const
 	{
 		if (inside(ray.start)) return true;
 		for (int dim = 0; dim < 3; dim++) {
 			if ((ray.dir[dim] < 0 && ray.start[dim] < vmin[dim]) || (ray.dir[dim] > 0 && ray.start[dim] > vmax[dim])) return false;
 			if (fabs(ray.dir[dim]) < 1e-9) continue;
-			double mul = 1.0 / ray.dir[dim];
+			double mul = ray.rdir[dim];
 			int u = (dim == 0) ? 1 : 0;
 			int v = (dim == 2) ? 1 : 2;
 			double dist, x, y;
@@ -121,14 +134,14 @@ struct BBox {
 	/// returns the distance to the closest intersection of the ray and the BBox, or +INF if such an intersection doesn't exist.
 	/// please note that this is heavier than using just testIntersect() - testIntersect needs only to consider *ANY* intersection,
 	/// whereas closestIntersection() also needs to find the nearest one.
-	inline double closestIntersection(const Ray& ray) const
+	inline double closestIntersection(const RRay& ray) const
 	{
 		if (inside(ray.start)) return 0;
 		double minDist = INF;
 		for (int dim = 0; dim < 3; dim++) {
 			if ((ray.dir[dim] < 0 && ray.start[dim] < vmin[dim]) || (ray.dir[dim] > 0 && ray.start[dim] > vmax[dim])) return INF;
 			if (fabs(ray.dir[dim]) < 1e-9) continue;
-			double mul = 1.0 / ray.dir[dim];
+			double mul = ray.rdir[dim];
 			double xs[2] = { vmin[dim], vmax[dim] };
 			int u = (dim == 0) ? 1 : 0;
 			int v = (dim == 2) ? 1 : 2;
@@ -150,14 +163,16 @@ struct BBox {
 	inline bool intersectTriangle(const Vector& A, const Vector& B, const Vector& C) const
 	{
 		if (inside(A) || inside(B) || inside(C)) return true;
-		Ray ray;
+		RRay ray;
 		Vector t[3] = { A, B, C };
 		for (int i = 0; i < 3; i++) for (int j = i + 1; j < 3; j++) {
 			ray.start = t[i];
 			ray.dir = t[j] - t[i];
+			ray.prepareForTracing();
 			if (testIntersect(ray)) {
 				ray.start = t[j];
 				ray.dir = t[i] - t[j];
+				ray.prepareForTracing();
 				if (testIntersect(ray)) return true;
 			}
 		}

@@ -140,8 +140,10 @@ bool Mesh::intersectTriangle(const Ray& ray, const Triangle& T, IntersectionInfo
 }
 
 
-bool Mesh::intersect(const Ray& ray, IntersectionInfo& info)
+bool Mesh::intersect(const Ray& _ray, IntersectionInfo& info)
 {
+	RRay ray(_ray);
+	ray.prepareForTracing();
 	if (!bbox.testIntersect(ray))
 		return false;
 	
@@ -351,7 +353,7 @@ void Mesh::buildKD(KDTreeNode* node, const vector<int>& triangleIndices, BBox bb
 	nodeDepthSum += depth;
 }
 
-bool Mesh::intersectKD(Ray ray, IntersectionInfo& info, KDTreeNode& node, const BBox& bbox)
+bool Mesh::intersectKD(const RRay& ray, IntersectionInfo& info, KDTreeNode& node, const BBox& bbox)
 {
 	// is it leaf?
 	if (node.isLeafNode()) {

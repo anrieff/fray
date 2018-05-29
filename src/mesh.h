@@ -66,7 +66,7 @@ protected:
 	void prepareTriangles();
 	bool intersectTriangle(const Ray& ray, const Triangle& T, IntersectionInfo& info);
 	void buildKD(KDTreeNode* node, const std::vector<int>& triangleIndices, BBox bbox, int depth);
-	bool intersectKD(Ray ray, IntersectionInfo& info, KDTreeNode& node, const BBox& bbox);
+	bool intersectKD(const RRay& ray, IntersectionInfo& info, KDTreeNode& node, const BBox& bbox);
 public:
 
 	bool faceted = false;
