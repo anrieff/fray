@@ -23,6 +23,7 @@
  */
 #include "lights.h"
 #include "random_generator.h"
+#include <algorithm>
 
 std::vector<Light*> lights;
 
@@ -102,5 +103,5 @@ bool RectLight::intersect(Ray ray, IntersectionInfo& info)
 
 double RectLight::solidAngle(const IntersectionInfo& x) 
 {
-	return 2*PI / (x.ip - center).lengthSqr();
+	return area / std::max(1.0, (x.ip - center).lengthSqr());
 }
