@@ -296,6 +296,7 @@ void render()
 	
 	for (int y = 0; y < frameHeight(); y++) {
 		for (int x = 0; x < frameWidth(); x++) {
+			if (wantToQuit) return;
 			Color avg(0, 0, 0);
 			for (int i = 0; i < samplesPerPixel; i++) {
 				if (scene.camera->stereoSeparation == 0) {
@@ -338,6 +339,13 @@ void render()
 	printf("Frame took %d ms\n", elapsed);
 }
 
+int renderSceneThread(void* /*unused*/)
+{
+	render();
+	rendering = false;
+	return 0;
+}
+
 bool parseCmdLine(int argc, char** argv)
 {
 	if (argc == 1) return true;
@@ -350,6 +358,17 @@ bool parseCmdLine(int argc, char** argv)
 	}
 }
 
+void debugRayTrace(int x, int y)
+{
+	// trace a test ("debugging") ray through a clicked pixel on the screen
+	Ray ray = scene.camera->getScreenRay(x, y);
+	ray.flags |= RF_DEBUG;
+	if (scene.settings.gi)
+		pathtrace(ray, Color(1, 1, 1), getRandomGen());
+	else
+		raytrace(ray);
+}
+
 int main(int argc, char** argv)
 {
 	if (!parseCmdLine(argc, argv)) return -1;
@@ -358,9 +377,9 @@ int main(int argc, char** argv)
 	initGraphics(scene.settings.frameWidth, scene.settings.frameHeight);
 	scene.beginRender();
 	scene.beginFrame();
-	render();
+	renderScene_threaded();
 	displayVFB(vfb);
-	waitForUserExit();
+	if (!wantToQuit) waitForUserExit();
 	closeGraphics();
 	printf("Exited cleanly\n");
 	return 0;

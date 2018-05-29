@@ -26,9 +26,13 @@
 #include "color.h"
 #include "constants.h"
 
+extern volatile bool rendering; // used in main/worker thread synchronization
+extern bool wantToQuit;
+
 bool initGraphics(int frameWidth, int frameHeight);
 void closeGraphics(void);
 void displayVFB(Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]); //!< displays the VFB (Virtual framebuffer) to the real one.
 void waitForUserExit(void); //!< Pause. Wait until the user closes the application
 int frameWidth(void); //!< returns the frame width (pixels)
 int frameHeight(void); //!< returns the frame height (pixels)
+bool renderScene_threaded();

@@ -49,6 +49,11 @@ public:
 	bool loadEXR(const char* filename); //!< Loads an EXR file
 	bool saveEXR(const char* filename); //!< Saves the image into the EXR format, preserving the dynamic range, using Half for storage.
 
+	enum OutputFormat { /// the two supported writing formats
+		outputFormat_BMP,
+		outputFormat_EXR,
+	};
+
 	virtual bool loadImage(const char* filename); //!< Loads an image (the format is detected from extension)
 	virtual bool saveImage(const char* filename); //!< Save the bitmap to an image (the format is detected from extension)
 };
