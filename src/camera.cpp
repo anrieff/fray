@@ -68,9 +68,9 @@ Ray Camera::getScreenRay(double x, double y, WhichCamera whichCamera)
 	return result;
 }
 
-Ray Camera::getDOFRay(double x, double y)
+Ray Camera::getDOFRay(double x, double y, WhichCamera whichCamera)
 {
-	Ray ray = getScreenRay(x, y);
+	Ray ray = getScreenRay(x, y, whichCamera);
 	Vector screenRayDir = ray.dir;
 	double M = focalPlaneDist / dot(frontDir, screenRayDir);
 	Vector T = this->pos + screenRayDir * M;

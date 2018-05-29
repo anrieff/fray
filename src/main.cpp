@@ -37,6 +37,7 @@
 #include "shading.h"
 #include "environment.h"
 #include "random_generator.h"
+#include "cxxptl-sdl.h"
 using namespace std;
 
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE];
@@ -270,8 +271,66 @@ Color raytrace(double x, double y)
 	return raytrace(scene.camera->getScreenRay(x, y));
 }
 
+Color trace(Ray ray, Random& rnd)
+{
+	if (scene.settings.gi) {
+		return pathtrace(ray, Color(1, 1, 1), rnd);
+	} else {
+		return raytrace(ray);
+	}
+}
+
+Color raytraceSinglePixel(double x, double y)
+{
+	Random& rnd = getRandomGen();
+	auto getRay = scene.camera->dof ?
+		[](double x, double y, WhichCamera whichCamera) {
+			return scene.camera->getDOFRay(x, y, whichCamera);
+		} :
+		[](double x, double y, WhichCamera whichCamera) {
+			return scene.camera->getScreenRay(x, y, whichCamera);
+		};
+
+	if (scene.camera->stereoSeparation > 0) {
+		Ray leftRay = getRay(x, y, CAMERA_LEFT);
+		Ray rightRay= getRay(x, y, CAMERA_RIGHT);
+		Color colorLeft = trace(leftRay, rnd);
+		Color colorRight = trace(rightRay, rnd);
+		if (scene.settings.saturation != 1) {
+			colorLeft.adjustSaturation(scene.settings.saturation);
+			colorRight.adjustSaturation(scene.settings.saturation);
+
+		}
+		return  colorLeft * scene.camera->leftMask
+		      + colorRight* scene.camera->rightMask;
+	} else {
+		Ray ray = getRay(x, y, CAMERA_CENTER);
+		return trace(ray, rnd);
+	}
+}
+
+
 void render()
 {
+	scene.beginFrame();
+	const int SQUARE_SIZE = 16;
+	if (scene.settings.wantPrepass) {
+		for (int y = 0; y < frameHeight(); y += SQUARE_SIZE) {
+			int ey = min(frameHeight(), y + SQUARE_SIZE);
+			int cy = (y + ey) / 2;
+			for (int x = 0; x < frameWidth(); x += SQUARE_SIZE) {
+				int ex = min(frameWidth(), x + SQUARE_SIZE);
+				int cx = (x + ex) / 2;
+				Color c = raytraceSinglePixel(cx, cy);
+				if (!drawRect(Rect(x, y, ex, ey), c))
+					return;
+			}
+		}
+				
+	}
+	
+	vector<Rect> buckets = getBucketsList();
+	
 	const long long startTicks = getTicks();
 	
 	const double offsets[5][2] = {
@@ -282,7 +341,6 @@ void render()
 		{ 0.6, 0.6 },
 	};
 	int samplesPerPixel = COUNT_OF(offsets);
-	long long lastUpdate = startTicks;
 	if (!scene.settings.wantAA) samplesPerPixel = 1;
 	if (scene.camera->dof)
 		samplesPerPixel = max(samplesPerPixel, scene.camera->numDOFSamples);
@@ -290,16 +348,13 @@ void render()
 		samplesPerPixel = max(samplesPerPixel, scene.settings.numPaths);
 	Random& rnd = getRandomGen();
 	
-	auto trace = scene.settings.gi ? [] (Ray ray) { return pathtrace(ray, Color(1, 1, 1), getRandomGen()); } :
-			                         [] (Ray ray) { return raytrace(ray); };
-	
-	
-	for (int y = 0; y < frameHeight(); y++) {
-		for (int x = 0; x < frameWidth(); x++) {
-			if (wantToQuit) return;
-			Color avg(0, 0, 0);
-			for (int i = 0; i < samplesPerPixel; i++) {
-				if (scene.camera->stereoSeparation == 0) {
+	for (int buckId = 0; buckId < (int) buckets.size(); buckId++) {
+		Rect& r = buckets[buckId];
+		if (!markRegion(r)) return;
+		for (int y = r.y0; y < r.y1; y++) {
+			for (int x = r.x0; x < r.x1; x++) {
+				Color avg(0, 0, 0);
+				for (int i = 0; i < samplesPerPixel; i++) {
 					Ray ray;
 					float offsetX, offsetY;
 					if (scene.camera->dof || scene.settings.gi) {
@@ -309,30 +364,12 @@ void render()
 						offsetX = offsets[i][0];
 						offsetY = offsets[i][1];
 					}
-					if (scene.camera->dof) {
-						ray = scene.camera->getDOFRay(x + offsetX, y + offsetY);
-					} else {
-						ray = scene.camera->getScreenRay(x + offsetX, y + offsetY);
-					}
-					avg += trace(ray);
-				} else {
-					Ray leftRay, rightRay;
-					leftRay = scene.camera->getScreenRay(x + offsets[i][0], y + offsets[i][1], CAMERA_LEFT);
-					rightRay = scene.camera->getScreenRay(x + offsets[i][0], y + offsets[i][1], CAMERA_RIGHT);
-					Color leftColor = trace(leftRay);
-					Color rightColor = trace(rightRay);
-					leftColor.adjustSaturation(0.1f);
-					rightColor.adjustSaturation(0.1f);
-					avg += leftColor * scene.camera->leftMask + rightColor * scene.camera->rightMask;
+					avg += raytraceSinglePixel(x + offsetX, y + offsetY);
 				}
+				vfb[y][x] = avg / samplesPerPixel;
 			}
-			vfb[y][x] = avg / samplesPerPixel;
 		}
-		const long long currentTime = getTicks();
-		if (currentTime - lastUpdate > 100) {
-			lastUpdate = currentTime;
-			displayVFB(vfb);
-		}
+		if (!displayVFBRect(r, vfb)) return;
 	}
 	unsigned elapsed = getTicks() - startTicks;
 	
@@ -376,7 +413,6 @@ int main(int argc, char** argv)
 	scene.parseScene(sceneFile);
 	initGraphics(scene.settings.frameWidth, scene.settings.frameHeight);
 	scene.beginRender();
-	scene.beginFrame();
 	renderScene_threaded();
 	displayVFB(vfb);
 	if (!wantToQuit) waitForUserExit();

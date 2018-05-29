@@ -78,6 +78,6 @@ public:
 	ElementType getElementType() const { return ELEM_CAMERA; }	
 	
 	Ray getScreenRay(double x, double y, WhichCamera whichCamera = CAMERA_CENTER);
-	Ray getDOFRay(double x, double y);
+	Ray getDOFRay(double x, double y, WhichCamera whichCamera = CAMERA_CENTER);
 	
 };
