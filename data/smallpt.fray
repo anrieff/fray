@@ -1,0 +1,115 @@
+//
+// SmallPT scene - taken from Kevin Beason's smallpt renderer (http://kevinbeason.com/smallpt/)
+// He uses spheres to create walls; we use real planes. Otherwise, the scenes are identical.
+//
+
+GlobalSettings {
+	frameWidth          640
+	frameHeight         480
+	maxTraceDepth 8
+	ambientLight (0.1, 0.1, 0.1)
+	gi 			on
+	pathsPerPixel 	40
+}
+
+Camera camera {
+	position     (50,52,295.6)
+    yaw          180
+    pitch        -2.4
+	fov           37
+}
+
+//////////////////////// LIGHTS ////////////////////////////////////////////
+
+RectLight l1 {
+	translate  (50, 81.33, 81.6)
+	rotate     (0, 0, 0)
+	color	   (1, 1, 1)
+	power	   12
+	scale (34, 34, 34)
+	xSubd  6
+	ySubd  6
+}
+
+Sphere S {
+	R 16.5
+}
+
+Plane plane {
+}
+
+Lambert gray {
+	color (0.75, 0.75, 0.75)
+}
+
+Lambert reddish {
+	color (0.75, 0.25, 0.25)
+}
+
+Lambert bluish {
+	color (0.25, 0.25, 0.75)
+}
+
+Refl refl {
+	multiplier 0.999
+}
+
+Node left {
+	geometry plane
+	rotate (0, 0, -90)
+	translate (99, 0, 0)
+	shader reddish
+}
+
+Node right {
+	geometry plane
+	rotate (0, 0, 90)
+	translate (1, 0, 0)
+	shader bluish
+}
+
+Node floor {
+	geometry plane
+	shader gray
+}
+
+Node ceiling {
+	geometry plane
+	rotate (0, 0, 180)
+	translate (0, 81.6, 0)
+	shader gray
+}
+
+Node back {
+	geometry plane
+	rotate (0, -90, 0)
+	shader gray
+}
+
+Node reflSphere {
+	geometry S
+	translate (73,16.5,47)
+	shader refl
+}
+
+Refr refr {
+	ior 1.5
+	multiplier 0.999
+}
+
+Fresnel fresnel {
+	ior 1.5
+}
+
+Layered glass {
+	layer refr (1, 1, 1)
+	layer refl (1, 1, 1) fresnel
+}
+
+Node glassSphere {
+	geometry S
+	translate (27,16.5,78)
+	shader refr
+}
+
+
