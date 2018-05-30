@@ -2,12 +2,15 @@
 
 // 1. First, some global settings
 GlobalSettings {
-	frameWidth          1024
-	frameHeight         768
+	frameWidth          640
+	frameHeight         480
 	ambientLight        (0.28, 0.30, 0.35)
 	maxTraceDepth		5
 	wantAA				off
 	saturation 0.1
+	numThreads		    8
+	interactive		    on
+	fullscreen          on
 }
 
 PointLight {
@@ -167,8 +170,8 @@ Node ball3 {
 */
 Node wineglass {
 	geometry wineglass
-	//shader	white_flat
-	shader	 glass
+	shader	white_flat
+	//shader	 glass
 	translate (126, 0, 80)
 	scale (17, 17, 17)
 }

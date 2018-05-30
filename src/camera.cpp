@@ -26,6 +26,8 @@
 #include "matrix.h"
 #include "util.h"
 #include "sdl.h"
+#include <algorithm>
+using namespace std;
 
 void Camera::beginFrame()
 {
@@ -84,4 +86,18 @@ Ray Camera::getDOFRay(double x, double y, WhichCamera whichCamera)
 	ray.dir.normalize();
 	
 	return ray;
+}
+
+
+void Camera::move(double rx, double ry)
+{
+	pos += rx * rightDir + ry * frontDir;
+}
+
+void Camera::rotate(double rx, double ry)
+{
+	yaw += rx;
+	pitch += ry;
+	pitch = min(pitch, +90.0);
+	pitch = max(pitch, -90.0);
 }

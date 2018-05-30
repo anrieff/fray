@@ -80,4 +80,6 @@ public:
 	Ray getScreenRay(double x, double y, WhichCamera whichCamera = CAMERA_CENTER);
 	Ray getDOFRay(double x, double y, WhichCamera whichCamera = CAMERA_CENTER);
 	
+	void move(double rx, double ry);
+	void rotate(double rx, double ry);
 };

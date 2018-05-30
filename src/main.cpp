@@ -21,6 +21,8 @@
  * @File main.cpp
  * @Brief Raytracer main file
  */
+#include <SDL/SDL.h>
+#include <SDL/SDL_events.h>
 #include <math.h>
 #include <string.h>
 #include <vector>
@@ -40,8 +42,17 @@
 #include "cxxptl-sdl.h"
 using namespace std;
 
+ThreadPool pool;
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE];
 char sceneFile[256] = "data/forest.fray";
+const double offsets[5][2] = {
+	{ 0, 0 }, 
+	{ 0.6, 0 },
+	{ 0.3, 0.3 },
+	{ 0, 0.6 },
+	{ 0.6, 0.6 },
+};
+
 
 bool visible(const Vector& a, const Vector& b)
 {
@@ -309,12 +320,61 @@ Color raytraceSinglePixel(double x, double y)
 	}
 }
 
+class RendMT: public Parallel {
+	InterlockedInt cursor;
+	vector<Rect> buckets;
+	int samplesPerPixel;
+	Mutex mtx;
+public:
+	RendMT(const vector<Rect>& buckets, int samplesPerPixel): 
+		cursor(0), buckets(buckets), samplesPerPixel(samplesPerPixel) {}
+	void entry(int threadIdx, int threadCount) override
+	{
+		Random rnd = getRandomGen();
+		while (1) {
+			int buckId = (cursor++);
+			if (buckId >= int(buckets.size())) return;
+			Rect& r = buckets[buckId];
+			bool ok = true;
+			if (!scene.settings.interactive) {
+				mtx.enter();
+				ok = markRegion(r);
+				mtx.leave();
+				if (!ok) return;
+			}
+			for (int y = r.y0; y < r.y1; y++) {
+				for (int x = r.x0; x < r.x1; x++) {
+					Color avg(0, 0, 0);
+					for (int i = 0; i < samplesPerPixel; i++) {
+						Ray ray;
+						float offsetX, offsetY;
+						if (scene.camera->dof || scene.settings.gi) {
+							offsetX = rnd.randfloat();
+							offsetY = rnd.randfloat();
+						} else {
+							offsetX = offsets[i][0];
+							offsetY = offsets[i][1];
+						}
+						avg += raytraceSinglePixel(x + offsetX, y + offsetY);
+					}
+					vfb[y][x] = avg / samplesPerPixel;
+				}
+			}
+			if (!scene.settings.interactive) {
+				mtx.enter();
+				ok = displayVFBRect(r, vfb);
+				mtx.leave();
+				if (!ok) return;
+			}
+		}
+	}
+};
 
 void render()
 {
 	scene.beginFrame();
 	const int SQUARE_SIZE = 16;
-	if (scene.settings.wantPrepass) {
+	if (scene.settings.wantPrepass && !scene.settings.interactive) {
 		for (int y = 0; y < frameHeight(); y += SQUARE_SIZE) {
 			int ey = min(frameHeight(), y + SQUARE_SIZE);
 			int cy = (y + ey) / 2;
@@ -331,44 +391,16 @@ void render()
 	
 	vector<Rect> buckets = getBucketsList();
 	
-	const double offsets[5][2] = {
-		{ 0, 0 }, 
-		{ 0.6, 0 },
-		{ 0.3, 0.3 },
-		{ 0, 0.6 },
-		{ 0.6, 0.6 },
-	};
 	int samplesPerPixel = COUNT_OF(offsets);
 	if (!scene.settings.wantAA) samplesPerPixel = 1;
 	if (scene.camera->dof)
 		samplesPerPixel = max(samplesPerPixel, scene.camera->numDOFSamples);
 	if (scene.settings.gi)
 		samplesPerPixel = max(samplesPerPixel, scene.settings.numPaths);
-	Random& rnd = getRandomGen();
+
+	RendMT worker(buckets, samplesPerPixel);
 	
-	for (int buckId = 0; buckId < (int) buckets.size(); buckId++) {
-		Rect& r = buckets[buckId];
-		if (!markRegion(r)) return;
-		for (int y = r.y0; y < r.y1; y++) {
-			for (int x = r.x0; x < r.x1; x++) {
-				Color avg(0, 0, 0);
-				for (int i = 0; i < samplesPerPixel; i++) {
-					Ray ray;
-					float offsetX, offsetY;
-					if (scene.camera->dof || scene.settings.gi) {
-						offsetX = rnd.randfloat();
-						offsetY = rnd.randfloat();
-					} else {
-						offsetX = offsets[i][0];
-						offsetY = offsets[i][1];
-					}
-					avg += raytraceSinglePixel(x + offsetX, y + offsetY);
-				}
-				vfb[y][x] = avg / samplesPerPixel;
-			}
-		}
-		if (!displayVFBRect(r, vfb)) return;
-	}
+	pool.run(&worker, scene.settings.numThreads);
 }
 
 int renderSceneThread(void* /*unused*/)
@@ -401,21 +433,87 @@ void debugRayTrace(int x, int y)
 		raytrace(ray);
 }
 
+void mainloop(void)
+{
+	SDL_ShowCursor(0);
+	bool running = true;
+	Camera& cam = *scene.camera;
+	const double MOVEMENT_PER_SEC = 20;
+	const double ROTATION_PER_SEC = 50;
+	const double SENSITIVITY = 0.1;
+
+	while (running) {
+		Uint32 ticksSaved = SDL_GetTicks();
+		render();
+		displayVFB(vfb);
+		// timeDelta is how much time the frame took to render:
+		double timeDelta = (SDL_GetTicks() - ticksSaved) / 1000.0;
+		//
+		SDL_Event ev;
+
+		while (SDL_PollEvent(&ev)) {
+			switch (ev.type) {
+				case SDL_QUIT:
+					running = false;
+					break;
+				case SDL_KEYDOWN:
+				{
+					switch (ev.key.keysym.sym) {
+						case SDLK_ESCAPE:
+							running = false;
+							break;
+						default:
+							break;
+					}
+					break;
+				}
+			}
+		}
+
+		Uint8* keystate = SDL_GetKeyState(NULL);
+		double movement = MOVEMENT_PER_SEC * timeDelta;
+		double rotation = ROTATION_PER_SEC * timeDelta;
+		if (keystate[SDLK_UP]) cam.move(0, +movement);
+		if (keystate[SDLK_DOWN]) cam.move(0, -movement);
+		if (keystate[SDLK_LEFT]) cam.move(-movement, 0);
+		if (keystate[SDLK_RIGHT]) cam.move(+movement, 0);
+
+		if (keystate[SDLK_KP8]) cam.rotate(0, +rotation);
+		if (keystate[SDLK_KP2]) cam.rotate(0, -rotation);
+		if (keystate[SDLK_KP4]) cam.rotate(+rotation, 0);
+		if (keystate[SDLK_KP6]) cam.rotate(-rotation, 0);
+
+		int deltax, deltay;
+		SDL_GetRelativeMouseState(&deltax, &deltay);
+		cam.rotate(-SENSITIVITY * deltax, -SENSITIVITY*deltay);
+	}
+}
+
+
 int main(int argc, char** argv)
 {
 	if (!parseCmdLine(argc, argv)) return -1;
 	initRandom(42);
 	scene.parseScene(sceneFile);
-	initGraphics(scene.settings.frameWidth, scene.settings.frameHeight);
+	initGraphics(scene.settings.frameWidth, scene.settings.frameHeight, 
+				scene.settings.fullscreen);
+	
+	if (scene.settings.numThreads == 0)
+		scene.settings.numThreads = get_processor_count();
+	
 	scene.beginRender();
-	setWindowCaption("fray: rendering...");
-	Uint32 startTicks = getTicks();
-	renderScene_threaded();
-	Uint32 elapsedMs = getTicks() - startTicks;
-	printf("Render took %.2fs\n", elapsedMs / 1000.0f);
-	setWindowCaption("fray: rendered in %.2fs\n", elapsedMs / 1000.0f);
-	displayVFB(vfb);
-	if (!wantToQuit) waitForUserExit();
+	if (!scene.settings.interactive) {
+		setWindowCaption("fray: rendering...");
+		Uint32 startTicks = getTicks();
+		renderScene_threaded();
+		Uint32 elapsedMs = getTicks() - startTicks;
+		printf("Render took %.2fs\n", elapsedMs / 1000.0f);
+		setWindowCaption("fray: rendered in %.2fs\n", elapsedMs / 1000.0f);
+		displayVFB(vfb);
+		if (!wantToQuit) waitForUserExit();
+	} else {
+		mainloop();
+	}
 	closeGraphics();
 	printf("Exited cleanly\n");
 	return 0;

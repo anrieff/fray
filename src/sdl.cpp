@@ -39,13 +39,16 @@ SDL_mutex *render_lock;
 bool render_async, wantToQuit = false;
 
 /// try to create a frame window with the given dimensions
-bool initGraphics(int frameWidth, int frameHeight)
+bool initGraphics(int frameWidth, int frameHeight, bool fullscren)
 {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		printf("Cannot initialize SDL: %s\n", SDL_GetError());
 		return false;
 	}
-	screen = SDL_SetVideoMode(frameWidth, frameHeight, 32, 0);
+	Uint32 flags = 0;
+	if (fullscren)
+		flags |= SDL_FULLSCREEN;
+	screen = SDL_SetVideoMode(frameWidth, frameHeight, 32, flags);
 	if (!screen) {
 		printf("Cannot set video mode %dx%d - %s\n", frameWidth, frameHeight, SDL_GetError());
 		return false;
