@@ -294,13 +294,15 @@ Color trace(const Ray& ray, Random& rnd)
 Color raytraceSinglePixel(double x, double y)
 {
 	Random& rnd = getRandomGen();
-	auto getRay = scene.camera->dof ?
-		[](double x, double y, WhichCamera whichCamera) {
-			return scene.camera->getDOFRay(x, y, whichCamera);
-		} :
-		[](double x, double y, WhichCamera whichCamera) {
-			return scene.camera->getScreenRay(x, y, whichCamera);
-		};
+	const auto getDOFRay = [](double x, double y, WhichCamera whichCamera) {
+		return scene.camera->getDOFRay(x, y, whichCamera);
+	};
+	const auto getScreenRay = [](double x, double y, WhichCamera whichCamera) {
+		return scene.camera->getScreenRay(x, y, whichCamera);
+	};
+	const auto getRay = scene.camera->dof
+		? std::function<Ray(double, double, WhichCamera)>(getDOFRay)
+		: std::function<Ray(double, double, WhichCamera)>(getScreenRay);
 
 	if (scene.camera->stereoSeparation > 0) {
 		Ray leftRay = getRay(x, y, CAMERA_LEFT);
