@@ -21,8 +21,16 @@
  * @File main.cpp
  * @Brief Raytracer main file
  */
+#ifdef _WIN32
+#include <SDL.h>
+#include <SDL_events.h>
+#ifdef main
+#undef main
+#endif // main
+#else
 #include <SDL/SDL.h>
 #include <SDL/SDL_events.h>
+#endif // _WIN32
 #include <math.h>
 #include <string.h>
 #include <vector>
