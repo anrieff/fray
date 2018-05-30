@@ -277,12 +277,7 @@ Color raytrace(const Ray& ray)
 	return closestNode->shader->shade(ray, closestIntersection);
 }
 
-Color raytrace(double x, double y)
-{
-	return raytrace(scene.camera->getScreenRay(x, y));
-}
-
-Color trace(const Ray& ray, Random& rnd)
+inline Color trace(const Ray& ray, Random& rnd)
 {
 	if (scene.settings.gi) {
 		return pathtrace(ray, Color(1, 1, 1), rnd);
@@ -291,19 +286,16 @@ Color trace(const Ray& ray, Random& rnd)
 	}
 }
 
-Color raytraceSinglePixel(double x, double y)
+inline Ray getRay(double x, double y, WhichCamera whichCamera)
 {
-	Random& rnd = getRandomGen();
-	const auto getDOFRay = [](double x, double y, WhichCamera whichCamera) {
+	if (scene.camera->dof)
 		return scene.camera->getDOFRay(x, y, whichCamera);
-	};
-	const auto getScreenRay = [](double x, double y, WhichCamera whichCamera) {
+	else
 		return scene.camera->getScreenRay(x, y, whichCamera);
-	};
-	const auto getRay = scene.camera->dof
-		? std::function<Ray(double, double, WhichCamera)>(getDOFRay)
-		: std::function<Ray(double, double, WhichCamera)>(getScreenRay);
+}
 
+Color raytraceSinglePixel(double x, double y, Random& rnd)
+{
 	if (scene.camera->stereoSeparation > 0) {
 		Ray leftRay = getRay(x, y, CAMERA_LEFT);
 		Ray rightRay= getRay(x, y, CAMERA_RIGHT);
@@ -317,8 +309,7 @@ Color raytraceSinglePixel(double x, double y)
 		return  colorLeft * scene.camera->leftMask
 		      + colorRight* scene.camera->rightMask;
 	} else {
-		const Ray& ray = getRay(x, y, CAMERA_CENTER);
-		return trace(ray, rnd);
+		return trace(getRay(x, y, CAMERA_CENTER), rnd);
 	}
 }
 
@@ -357,7 +348,7 @@ public:
 							offsetX = offsets[i][0];
 							offsetY = offsets[i][1];
 						}
-						avg += raytraceSinglePixel(x + offsetX, y + offsetY);
+						avg += raytraceSinglePixel(x + offsetX, y + offsetY, rnd);
 					}
 					vfb[y][x] = avg / samplesPerPixel;
 				}
@@ -374,6 +365,7 @@ public:
 
 void render()
 {
+	Random& rnd = getRandomGen();
 	scene.beginFrame();
 	const int SQUARE_SIZE = 16;
 	if (scene.settings.wantPrepass && !scene.settings.interactive) {
@@ -383,7 +375,7 @@ void render()
 			for (int x = 0; x < frameWidth(); x += SQUARE_SIZE) {
 				int ex = min(frameWidth(), x + SQUARE_SIZE);
 				int cx = (x + ex) / 2;
-				Color c = raytraceSinglePixel(cx, cy);
+				Color c = raytraceSinglePixel(cx, cy, rnd);
 				if (!drawRect(Rect(x, y, ex, ey), c))
 					return;
 			}
@@ -510,7 +502,7 @@ int main(int argc, char** argv)
 		renderScene_threaded();
 		Uint32 elapsedMs = getTicks() - startTicks;
 		printf("Render took %.2fs\n", elapsedMs / 1000.0f);
-		setWindowCaption("fray: rendered in %.2fs\n", elapsedMs / 1000.0f);
+		setWindowCaption("fray: rendered in %.2fs", elapsedMs / 1000.0f);
 		displayVFB(vfb);
 		if (!wantToQuit) waitForUserExit();
 	} else {
