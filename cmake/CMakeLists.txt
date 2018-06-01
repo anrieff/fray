@@ -1,14 +1,14 @@
 
 cmake_minimum_required(VERSION 3.4)
 
-include(./sdl.cmake)
-include(./openexr.cmake)
-include(./zlib.cmake)
-
 if (WIN32)
 # Flag override is required, to properly setup Debug build with Release SDK libraries
 	set (CMAKE_CXX_FLAGS_DEBUG "/MD /Zi /Od /Ob0 /D NDEBUG")
 endif()
+
+include(./sdl.cmake)
+include(./openexr.cmake)
+include(./zlib.cmake)
 
 project(fray)
 
