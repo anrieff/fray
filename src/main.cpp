@@ -415,8 +415,8 @@ int renderSceneThread(void* /*unused*/)
 bool parseCmdLine(int argc, char** argv)
 {
 	if (argc == 1) return true;
-	if (argc != 2 || !fileExists(argv[1])) {
-		printf("Usage: fray [scene.fray]\n");
+	if (argc != 2) {
+		fprintf(stderr, "Usage: fray [scene.fray]\n");
 		return false;
 	} else {
 		strcpy(sceneFile, argv[1]);
@@ -494,9 +494,18 @@ void mainloop(void)
 
 int main(int argc, char** argv)
 {
-	if (!parseCmdLine(argc, argv)) return -1;
+	if (!parseCmdLine(argc, argv))
+		return -1;
+	if (!fileExists(sceneFile)) {
+		fprintf(stderr, "The specified scene file does not exist: %s", sceneFile);
+		return -2;
+	}
 	initRandom(42);
-	scene.parseScene(sceneFile);
+	if (!scene.parseScene(sceneFile)) {
+		// scene parsing outputs its own errors
+		return -3;
+	}
+
 	initGraphics(scene.settings.frameWidth, scene.settings.frameHeight, 
 				scene.settings.fullscreen);
 	
