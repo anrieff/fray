@@ -1,5 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2009-2018 by Veselin Georgiev, Slavomir Kaslev et al    *
+ *   Copyright (C) 2009-2018 by Veselin Georgiev, Slavomir Kaslev,         *
+ *                              Deyan Hadzhiev et al                       *
  *   admin@raytracing-bg.net                                               *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *

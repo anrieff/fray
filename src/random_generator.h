@@ -1,5 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2009-2018 by Veselin Georgiev, Slavomir Kaslev et al    *
+ *   Copyright (C) 2009-2018 by Veselin Georgiev, Slavomir Kaslev,         *
+ *                              Deyan Hadzhiev et al                       *
  *   admin@raytracing-bg.net                                               *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -19,14 +20,6 @@
  ***************************************************************************/
 /**
  * @File random_generator.h
- * @Brief The Random class (random generation utilities)
- */
-#pragma once
-
-#include <random>
-
-/**
- * @File random_generator.h
  * @Brief holds the Random class, and some functions to fetch random number generators
  *
  * The Random class is based on the high-quality mt19937 (Mersenne Twister)
@@ -35,6 +28,9 @@
  * The Random class is not intended to be created and used directly.
  * Its construction is costly; instead, use one of the getRandomGen() functions.
  */
+#pragma once
+
+#include <random>
  
  class Random {
 	std::mt19937 generator; // mersenne twister generator
