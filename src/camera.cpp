@@ -27,6 +27,7 @@
 #include "matrix.h"
 #include "util.h"
 #include "sdl.h"
+#include "random_generator.h"
 #include <algorithm>
 using namespace std;
 
@@ -79,7 +80,8 @@ Ray Camera::getDOFRay(double x, double y, WhichCamera whichCamera)
 	Vector T = this->pos + screenRayDir * M;
 	
 	double u, v;
-	randomUnitDiscPoint(u, v);
+	Random& rnd = getRandomGen();
+	rnd.unitDiscSample(u, v);
 	u *= apertureSize;
 	v *= apertureSize;
 	ray.start += u * rightDir + v * upDir;

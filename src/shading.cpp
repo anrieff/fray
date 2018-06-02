@@ -25,6 +25,7 @@
 
 #include "shading.h"
 #include "main.h"
+#include "random_generator.h"
 #include "lights.h"
 #include <string.h>
 #include <algorithm>
@@ -173,11 +174,12 @@ Color Reflection::shade(const Ray& ray, const IntersectionInfo& info)
 		
 		Color sum(0, 0, 0);
 		int numSamplesActual = ray.depth == 0 ? numSamples : LOW_GLOSSY_SAMPLES;
+		Random& rnd = getRandomGen();
 		for (int i = 0; i < numSamplesActual; i++) {
 			double x, y;
 			Vector reflected;
 			while (1) {
-				randomUnitDiscPoint(x, y);
+				rnd.unitDiscSample(x, y);
 				
 				x *= deflectionScaling;
 				y *= deflectionScaling;
