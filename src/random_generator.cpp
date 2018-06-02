@@ -42,11 +42,7 @@
  ***************************************************************************/
  
 #include <math.h>
-#ifdef _WIN32
-#include <SDL.h>
-#else
 #include <SDL/SDL.h>
-#endif // _WIN32
 #include "random_generator.h"
 #include "constants.h"
 

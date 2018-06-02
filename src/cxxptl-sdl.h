@@ -22,13 +22,8 @@
  * @Brief SDL port of the CXXPTL library
  */
 #pragma once
-#ifdef _WIN32
-#include <SDL_thread.h>
-#include <SDL_mutex.h>
-#else
 #include <SDL/SDL_thread.h>
 #include <SDL/SDL_mutex.h>
-#endif
 
 /**
  * @File    cxxptl_sdl.h

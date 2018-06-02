@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="fray" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/fray" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/fray" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O3" />
+					<Add option="-ffast-math" />
+					<Add option="-march=native" />
+					<Add option="-fno-rtti" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-std=c++11" />
+			<Add option="-Wall" />
+			<Add directory="SDK/SDL-1.2.15/include" />
+			<Add directory="SDK/OpenEXR-mingw/include/OpenEXR" />
+		</Compiler>
+		<Linker>
+			<Add library="mingw32" />
+			<Add library="SDLmain" />
+			<Add library="SDL.dll" />
+			<Add library="user32" />
+			<Add library="gdi32" />
+			<Add library="winmm" />
+			<Add library="dxguid" />
+			<Add library="IlmImf" />
+			<Add library="Imath" />
+			<Add library="Iex" />
+			<Add library="Half" />
+			<Add library="IlmThread" />
+			<Add library="zlibstatic" />
+			<Add directory="SDK/SDL-1.2.15/lib" />
+			<Add directory="SDK/OpenEXR-mingw/lib" />
+		</Linker>
+		<Unit filename="src/bbox.h" />
+		<Unit filename="src/bitmap.cpp" />
+		<Unit filename="src/bitmap.h" />
+		<Unit filename="src/camera.cpp" />
+		<Unit filename="src/camera.h" />
+		<Unit filename="src/color.h" />
+		<Unit filename="src/constants.h" />
+		<Unit filename="src/cxxptl-sdl.cpp" />
+		<Unit filename="src/cxxptl-sdl.h" />
+		<Unit filename="src/environment.cpp" />
+		<Unit filename="src/environment.h" />
+		<Unit filename="src/geometry.cpp" />
+		<Unit filename="src/geometry.h" />
+		<Unit filename="src/heightfield.cpp" />
+		<Unit filename="src/heightfield.h" />
+		<Unit filename="src/lights.cpp" />
+		<Unit filename="src/lights.h" />
+		<Unit filename="src/main.cpp" />
+		<Unit filename="src/matrix.cpp" />
+		<Unit filename="src/matrix.h" />
+		<Unit filename="src/mesh.cpp" />
+		<Unit filename="src/mesh.h" />
+		<Unit filename="src/random_generator.cpp" />
+		<Unit filename="src/random_generator.h" />
+		<Unit filename="src/scene.cpp" />
+		<Unit filename="src/scene.h" />
+		<Unit filename="src/sdl.cpp" />
+		<Unit filename="src/sdl.h" />
+		<Unit filename="src/shading.cpp" />
+		<Unit filename="src/shading.h" />
+		<Unit filename="src/triangle.cpp" />
+		<Unit filename="src/triangle.h" />
+		<Unit filename="src/util.cpp" />
+		<Unit filename="src/util.h" />
+		<Unit filename="src/vector.h" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
