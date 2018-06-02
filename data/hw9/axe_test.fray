@@ -1,0 +1,84 @@
+//
+// A sample scene for the homeworks/Lect8
+//
+
+// 1. First, some global settings
+GlobalSettings {
+	frameWidth          640
+	frameHeight         480
+	ambientLight        (0.28, 0.30, 0.35)
+}
+
+PointLight l1 {
+	pos                 (160, 80, 33)
+	power               10000
+}
+
+// 2. A camera
+Camera camera {
+	position      (120, 33, 40)
+	yaw           10
+	pitch         -5
+	roll          0.0
+	fov           90
+	aspectRatio   1.333
+}
+
+Plane floor {
+	y        0
+	limit 128
+}
+
+CheckerTexture checker {
+	color1    (0.5, 0.5, 0.25)
+	color2    (0.25, 0.25, 0.25)
+	scaling 0.125
+}
+
+Lambert floorShader {
+	color (1, 1, 1)
+	texture  checker
+}
+
+// 3. A floor node, using a plane as a geometry, and a flat shader with a checker texture
+Node floorNode {
+	geometry  floor
+	shader    floorShader
+	translate (100, 0, 96)
+}
+
+Mesh axe {
+	file               "axe_lo.obj"
+	faceted false
+}
+
+Mesh heart {
+	file              "../geom/heart.obj"
+	faceted true
+}
+
+Lambert white_flat {
+	color (0.5, 0.5, 0.5)
+}
+
+
+Node heartNode {
+	geometry    heart
+	shader      white_flat
+	translate   (100, 24.2, 80)
+	rotate      (120, 0, 0)
+	scale       (6, 6, 6)
+}
+
+Node axeNode {
+	geometry    axe
+	shader      white_flat
+	translate   (150, 60, 120)
+	rotate      (120, 0, 0)
+	scale       (12, 12, 12)
+}
+
+// 5. The cubemap environment:
+CubemapEnvironment environment {
+	folder "../env/forest"
+}

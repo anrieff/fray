@@ -1,0 +1,120 @@
+//
+// This scene file recreates initializeScene() around tag 'homework4'
+//
+
+GlobalSettings {
+	frameWidth          640
+	frameHeight         480
+	ambientLight (0, 0, 0)
+}
+
+PointLight l1 {
+	pos     (-30, 100, -250)
+	power   150000
+}
+
+Camera camera {
+	position     (0, 50, -50)
+	//position (0, 100, -100)
+	aspectRatio   1.33333
+	yaw      0
+	pitch   -30
+	roll     0
+	fov     90
+}
+
+Plane floor {
+	y      2
+}
+
+CheckerTexture checker {
+	color1 (0,   0, 0)
+	color2 (0, 0.5, 1)
+}
+
+Lambert floor_shader {
+	texture checker
+}
+
+Node floor {
+	geometry floor
+	shader   floor_shader
+}
+
+
+Mesh 1 {
+	file "fig1.obj"
+	faceted true
+}
+
+Lambert L1 {
+	color (0.6, 0.5, 0.5)
+}
+
+Node 1 {
+	geometry 1
+	shader  L1
+	scale (10, 10, 10)
+}
+/*
+Mesh 2 {
+	file "fig2.obj"
+	faceted true
+}
+
+Lambert L2 {
+	color (0.5, 0.7, 0.5)
+}
+
+Node 2 {
+	geometry 2
+	shader  L2
+	scale (10, 10, 10)
+}
+
+Mesh 3 {
+	file "fig3.obj"
+	faceted true
+}
+
+Lambert L3 {
+	color (0.5, 0.5, 0.7)
+}
+
+Node 3 {
+	geometry 3
+	shader  L3
+	scale (10, 10, 10)
+}
+
+Mesh 4 {
+	file "fig4.obj"
+	faceted true
+}
+
+Lambert L4 {
+	color (0.7, 0.5, 0.5)
+}
+
+Node 4 {
+	geometry 4
+	shader  L4
+	scale (10, 10, 10)
+}
+
+Mesh 5 {
+	file "fig5.obj"
+	faceted true
+}
+
+Lambert L5 {
+	color (0.5, 0.7, 0.7)
+}
+
+Node 5 {
+	geometry 5
+	shader  L5
+	scale (10, 10, 10)
+}
+
+*/
