@@ -21,7 +21,10 @@
 				<Option type="0" />
 				<Option compiler="gcc" />
 				<Compiler>
-					<Add option="-O2" />
+					<Add option="-O3" />
+					<Add option="-ffast-math" />
+					<Add option="-march=native" />
+					<Add option="-fno-rtti" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -32,10 +35,12 @@
 			<Add option="-Wall" />
 			<Add option="-std=c++14" />
 			<Add option="`sdl-config --cflags`" />
+			<Add option="-fopenmp" />
 			<Add directory="/usr/include/OpenEXR" />
 		</Compiler>
 		<Linker>
 			<Add option="`sdl-config --libs`" />
+			<Add option="-fopenmp" />
 			<Add library="IlmImf" />
 			<Add library="Iex" />
 			<Add library="Half" />
