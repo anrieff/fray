@@ -7,10 +7,10 @@ GlobalSettings {
 	ambientLight        (0.28, 0.30, 0.35)
 	maxTraceDepth		5
 	wantAA				off
-	saturation 0.1
-	numThreads		    8
+	saturation          0.1
+	numThreads		    0
 	interactive		    on
-	fullscreen          on
+	fullscreen          off
 }
 
 PointLight {
