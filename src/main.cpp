@@ -21,11 +21,14 @@
  * @File main.cpp
  * @Brief Raytracer main file
  */
+#include <SDL/SDL.h>
+#include <SDL/SDL_events.h>
+// Undefine main redefinition, coming from SDL headers. They state that they need to perform initialization in the main
+// function, but fail to provide proper main(..) definition, so the linker may setup a proper entry point.
 #ifdef main
 #   undef main
 #endif
-#include <SDL/SDL.h>
-#include <SDL/SDL_events.h>
+
 #include <math.h>
 #include <string.h>
 #include <vector>
