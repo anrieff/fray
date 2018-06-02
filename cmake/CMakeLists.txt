@@ -1,6 +1,8 @@
 
 cmake_minimum_required(VERSION 3.4)
 
+enable_language(CXX)
+
 if (WIN32)
 # Flag override is required, to properly setup Debug build with Release SDK libraries
 	set (CMAKE_CXX_FLAGS_DEBUG "/MD /Zi /Od /Ob0 /D NDEBUG")
@@ -8,7 +10,9 @@ endif()
 
 include(./sdl.cmake)
 include(./openexr.cmake)
-include(./zlib.cmake)
+if (WIN32)
+	include(./zlib.cmake)
+endif()
 
 project(fray)
 
@@ -58,17 +62,21 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 target_link_libraries(${PROJECT_NAME}
 	${SDL_LIB}
 	${OPENEXR_LIB}
-	${ZLIB_LIB}
 )
 
 if (WIN32)
+	target_link_libraries(${PROJECT_NAME}
+		${ZLIB_LIB}
+	)
 	target_compile_definitions(${PROJECT_NAME}
 		PRIVATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_DEPRECATE
 	)
 endif()
 
-# add custom command for copying the SDL dll to the binary dir
-add_custom_command(TARGET ${PROJECT_NAME}
-	POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_PROPERTY:SDL,DLL_FILE_LIST> $<TARGET_FILE_DIR:${PROJECT_NAME}>
-)
+if (WIN32)
+	# add custom command for copying the SDL dll to the binary dir
+	add_custom_command(TARGET ${PROJECT_NAME}
+		POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_PROPERTY:SDL,DLL_FILE_LIST> $<TARGET_FILE_DIR:${PROJECT_NAME}>
+	)
+endif()
