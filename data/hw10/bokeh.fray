@@ -1,0 +1,90 @@
+//
+// An example scene for the bokeh DOF effect
+//
+//
+
+GlobalSettings {
+	frameWidth      640
+	frameHeight     480
+	ambientLight    (0.28, 0.30, 0.35)
+}
+
+PointLight {
+	pos	  (320, 160, -280)
+	power  130000
+	color (1, 1, 1)
+}
+
+Camera camera {
+	position      (0, 5, -50)
+	aspectRatio   1.33333
+	yaw      0
+	pitch    15
+	roll     0
+	fov      75
+	
+	focalPlaneDist 19.44
+	dof 1
+	fNumber 3.2
+	numSamples 45
+//	diaphragmBlades 5
+}
+
+Cube c0 {
+	halfSide 115
+}
+
+Cube c1 {
+	halfSide 115.001     // just a tiny bit larger than c0; so that it encompasses it in the XZ dimension
+	O    (0, -11.5, 0)
+}
+
+CsgMinus floor {
+	left  c0
+	right c1
+}
+
+BitmapTexture tex {
+	file     "../texture/wood.bmp"
+	scaling  0.004
+}
+
+Lambert lambert {
+	color    (0.66, 0.66, 0.66)
+	texture  tex
+}
+
+Refl refl {
+}
+
+Layered layered {
+	layer lambert (1, 1, 1)
+	layer    refl (0.2, 0.2, 0.2)
+}
+
+Node floor {
+	geometry    floor
+	shader      layered
+	translate   (0, -115, 0)
+}
+
+Mesh medusa {
+	file "medusa.obj"
+}
+
+Phong white {
+	color (0.447, 0.31, 0.31)
+	specularExponent 250
+	specularMultiplier 15
+}
+
+Node medusa {
+	geometry medusa
+	shader white
+	translate (-30, -50, 40)
+	rotate (150, 0, 0)
+}
+
+CubemapEnvironment {
+	folder "../env/forest"
+}
