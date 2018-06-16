@@ -1,0 +1,65 @@
+//
+// An example scene for the spherical triangle estimation testing
+// It sports three close-range rectangle lights, where the problems
+// with the simplistic estimation of RectLight::solidAngle() are present.
+//
+
+GlobalSettings {
+	frameWidth      640
+	frameHeight     480
+	gi                1
+	pathsPerPixel   128
+}
+
+RectLight light1 {
+	power  8
+	color (1, 1, 1)
+	translate (-8, 3, -4)
+	scale (6, 4, 4)
+	rotate (0,  0,  -90)
+	xSubd 15
+	ySubd 15
+}
+
+RectLight light2 {
+	power  8
+	color (1, 0, 0)
+	translate (-8, 1.5, 0)
+	scale (3, 2, 2)
+	rotate (0,  0,  -90)
+	xSubd 15
+	ySubd 15
+}
+
+RectLight light3 {
+	power  8
+	color (0, 1, 0)
+	translate (-8, 0.75, 4)
+	scale (1.5, 1, 1)
+	rotate (0,  0,  -90)
+	xSubd 15
+	ySubd 15
+}
+
+Camera camera {
+	position      (0, 7, -7)
+	aspectRatio   1.33333
+	yaw      45
+	pitch    -45
+	roll     0
+	fov      75
+}
+
+Plane plane {
+	limit 8
+}
+
+Lambert lambert {
+	color (0.5, 0.5, 0.5)
+}
+
+Node plane {
+	geometry plane
+	shader   lambert
+}
+
