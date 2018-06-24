@@ -73,32 +73,6 @@ void displayVFB(Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE])
 	SDL_Flip(screen);
 }
 
-/// waits the user to indicate he wants to close the application (by either clicking on the "X" of the window,
-/// or by pressing ESC)
-void waitForUserExit(void)
-{
-	SDL_Event ev;
-	while (1) {
-		while (SDL_WaitEvent(&ev)) {
-			switch (ev.type) {
-				case SDL_QUIT:
-					return;
-				case SDL_KEYDOWN:
-				{
-					switch (ev.key.keysym.sym) {
-						case SDLK_ESCAPE:
-							return;
-						default:
-							break;
-					}
-				}
-				default:
-					break;
-			}
-		}
-	}
-}
-
 /// returns the frame width
 int frameWidth(void)
 {
@@ -198,6 +172,16 @@ static void handleEvent(SDL_Event& ev)
 		}
 		default:
 			break;
+	}
+}
+
+/// waits the user to indicate he wants to close the application (by either clicking on the "X" of the window,
+/// or by pressing ESC)
+void waitForUserExit(void)
+{
+	SDL_Event ev;
+	while (!wantToQuit && SDL_WaitEvent(&ev)) {
+		handleEvent(ev);
 	}
 }
 
